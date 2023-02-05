@@ -6,7 +6,6 @@ var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 const cookieParser = require('cookie-parser');
-const crypto = require('crypto');
 
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
