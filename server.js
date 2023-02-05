@@ -12,13 +12,13 @@ const MongoStore = require('connect-mongo');
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
-  res.header('Access-Control-Allow-Origin', 'https://localhost:3000');
+  res.header('Access-Control-Allow-Origin', 'https://length.onrender.com/');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   next();
   app.options('/', (req, res) => {
         // allowed XHR methods
-        res.header('Access-Control-Allow-Origin', 'https://localhost:3000');
+        res.header('Access-Control-Allow-Origin', 'https://length.onrender.com/');
         res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
         res.send();
@@ -47,7 +47,7 @@ app.use(require("body-parser").json());
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', 'https://length.onrender.com/');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
@@ -85,7 +85,7 @@ app.get("/", urlencodedParser, async (req, res) => {
     secure: true,
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 },
-    domain : "https://localhost:3000/",
+    domain : "https://length.onrender.com/",
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
       collectionName: "sessions" // See below for details
@@ -120,7 +120,7 @@ app.post("/post", urlencodedParser, async (req, res) => {
         secure: true,
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 },
-        domain : "https://localhost:3000/",
+        domain : "https://length.onrender.com/",
         store: MongoStore.create({
           mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
           collectionName: "sessions" // See below for details
