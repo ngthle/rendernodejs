@@ -44,6 +44,24 @@ app.use(require("body-parser").json());
 //   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID)
 // })
 
+app.use(session({
+    name: 'server_ssID',
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    withCredentials: true,
+    cookie: {
+    sameSite: 'none',
+    secure: true,
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 },
+    domain : "https://length.onrender.com/",
+    store: MongoStore.create({
+      mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
+      collectionName: "sessions" // See below for details
+    })
+  }));
+
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
