@@ -1,12 +1,6 @@
 const express = require("express");
 const cors = require('cors');
-const https = require('https');
-const fs = require('fs');
-
-const app = require("https-localhost")();
-// const app = express();
-
-
+const app = express();
 
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
@@ -16,23 +10,6 @@ const crypto = require('crypto');
 
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-
-
-// app.use(cookieParser("keyboard cat"));
-
-// let key = fs.readFileSync('./tutorial.key','utf-8');
-// let cert = fs.readFileSync('/tutorial.crt','utf-8');
-//
-// const parameters = {
-//   key: key,
-//   cert: cert
-// }
-
-// let server = https.createServer(parameters, app);
-
-const PORT = process.env.PORT || 8080;
-
-app.listen(PORT, console.log(`Server started on port ${PORT}`));
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
@@ -50,7 +27,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(cors({
-  origin: 'https://localhost:3000',
+  origin: '*',
   methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
   credentials: true
 }));
@@ -159,3 +136,6 @@ app.post("/post", urlencodedParser, async (req, res) => {
   });
   });
 });
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, console.log(`Server started on port ${PORT}`));
