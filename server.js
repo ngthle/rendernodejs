@@ -70,6 +70,7 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
+  
   if(req.signedCookies.server_ssID) {
     const { MongoClient, ServerApiVersion } = require('mongodb');
     const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
@@ -134,4 +135,5 @@ app.post("/post", urlencodedParser, async (req, res) => {
   });
   });
 });
+
 app.listen();
