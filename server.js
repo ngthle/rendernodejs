@@ -153,4 +153,6 @@ app.post("/post", urlencodedParser, async (req, res) => {
   });
   });
 });
-app.listen();
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, console.log(`Server started on port ${PORT}`));
