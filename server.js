@@ -71,25 +71,26 @@ app.get("/", urlencodedParser, async (req, res) => {
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
   if(req.signedCookies.server_ssID) {
-    const { MongoClient, ServerApiVersion } = require('mongodb');
-    const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-    const collection = client.db("test").collection("sessions");
-    // perform actions on the collection object
-    var myQuery = { _id: req.signedCookies.server_ssID};
 
-    collection.findOne(myQuery, function(err, ress) {
-      if (err) throw err;
-      if (ress !== null) {
-        res.send({"result": "Hi " + ress.session, "isLoggedIn" : true});
-        console.log("isLoggedIn: true");
-      } else {
-        res.send({"result": "You are not logged in", "isLoggedIn" : false});
-      }
-    client.close();
-    });
-    });
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+  const collection = client.db("test").collection("sessions");
+  // perform actions on the collection object
+  var myQuery = { _id: req.signedCookies.server_ssID};
+
+  collection.findOne(myQuery, function(err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({"result": "Hi " + ress.session, "isLoggedIn" : true});
+      console.log("isLoggedIn: true");
+    } else {
+      res.send({"result": "You are not logged in", "isLoggedIn" : false});
+    }
+  client.close();
+  });
+  });
 } else {
   app.use(session({
     name: 'server_ssID',
