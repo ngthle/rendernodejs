@@ -26,7 +26,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(cors({
-  origin: '*',
+  origin: 'https://vercelreact-taupe.vercel.app/',
   methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
   credentials: true
 }));
