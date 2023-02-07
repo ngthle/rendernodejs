@@ -12,13 +12,13 @@ const MongoStore = require('connect-mongo');
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
-  res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app/');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   next();
   app.options('/', (req, res) => {
         // allowed XHR methods
-        res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+        res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app/');
         res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
         res.send();
@@ -55,7 +55,7 @@ app.use(session({
     secure: true,
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 },
-    domain : "https://vercelreact-taupe.vercel.app",
+    domain : "https://vercelreact-taupe.vercel.app/",
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
       collectionName: "sessions" // See below for details
@@ -65,12 +65,11 @@ app.use(session({
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app/');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-  
   if(req.signedCookies.server_ssID) {
     const { MongoClient, ServerApiVersion } = require('mongodb');
     const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
@@ -91,8 +90,26 @@ app.get("/", urlencodedParser, async (req, res) => {
     client.close();
     });
     });
-  }
-});
+} else {
+  app.use(session({
+    name: 'server_ssID',
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    withCredentials: true,
+    cookie: {
+    sameSite: 'none',
+    secure: true,
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 },
+    domain : "https://vercelreact-taupe.vercel.app/",
+    store: MongoStore.create({
+      mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
+      collectionName: "sessions" // See below for details
+    })
+  }));
+  res.send({"result": "Hello world", "isLoggedIn" : false});
+}});
 
 app.post("/post", urlencodedParser, async (req, res) => {
 
@@ -120,7 +137,7 @@ app.post("/post", urlencodedParser, async (req, res) => {
         secure: true,
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 },
-        domain : "https://vercelreact-taupe.vercel.app",
+        domain : "https://vercelreact-taupe.vercel.app/",
         store: MongoStore.create({
           mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
           collectionName: "sessions" // See below for details
@@ -135,5 +152,4 @@ app.post("/post", urlencodedParser, async (req, res) => {
   });
   });
 });
-
 app.listen();
