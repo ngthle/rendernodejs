@@ -154,5 +154,28 @@ app.post("/post", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/check-email", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  var myQuery = { email: req.body.email};
+
+  collection.findOne(myQuery, function(err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({"result": "An account with email" + ress.email + "already exist."});
+
+    } else {
+      res.send({"result": "OK!"});
+    }
+  client.close();
+  });
+  });
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, console.log(`Server started on port ${PORT}`));
