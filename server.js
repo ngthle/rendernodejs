@@ -167,9 +167,9 @@ app.post("/check-email", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      res.send({"result": "An account with email " + ress.email + " already exist."});
+      res.send({"result": "An account with email " + ress.email + " already exist."; "status": "message-invalid"});
     } else {
-      res.send({"result": "You can use this email."});
+      res.send({"result": "You can use this email."; "status": "message-valid"});
     }
   client.close();
   });
