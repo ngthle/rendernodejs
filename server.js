@@ -162,13 +162,12 @@ app.post("/check-email", urlencodedParser, async (req, res) => {
   client.connect(err => {
   const collection = client.db("test").collection("devices");
   // perform actions on the collection object
-  var myQuery = { email: req.body.email};
+  var myQuery = {email: req.body.email};
 
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
       res.send({"result": "An account with email" + ress.email + "already exist."});
-
     } else {
       res.send({"result": "OK!"});
     }
