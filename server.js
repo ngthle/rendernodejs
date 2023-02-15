@@ -130,7 +130,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      sessionsDB.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}});
+      sessionsDB.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}},{upsert: true});
       res.send({"result": "Logged in: " + ress.email, "isLoggedIn": true});
     } else {
       res.send({"result": "We couldn't find an account with that email address", "isLoggedIn": false});
