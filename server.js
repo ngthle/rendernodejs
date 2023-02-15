@@ -83,8 +83,12 @@ app.get("/", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      res.send({"result": "Hi " + ress.session, "isLoggedIn" : true});
-      console.log("isLoggedIn: true");
+      if (ress.email) {
+        res.send({"result": "Hi " + ress.session, "isLoggedIn" : true, "email" : ress.email});
+        console.log(ress.email + " has logged in");
+      } else {
+        res.send({"result": "Hi guest" + ress.session, "isLoggedIn" : false});
+      }
     } else {
       res.send({"result": "You are not logged in", "isLoggedIn" : false});
     }
