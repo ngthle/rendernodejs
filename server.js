@@ -123,13 +123,14 @@ app.post("/login", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("devices");
+  const sessionsDB = client.db("test").collection("sessions");
   // perform actions on the collection object
   var myQuery = {email: req.body.email, password: req.body.password};
 
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      collection.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}});
+      sessionsDB.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}});
       res.send({"result": "Logged in: " + ress.email, "isLoggedIn": true});
     } else {
       res.send({"result": "We couldn't find an account with that email address", "isLoggedIn": false});
