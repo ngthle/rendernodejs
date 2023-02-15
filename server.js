@@ -129,28 +129,9 @@ app.post("/login", urlencodedParser, async (req, res) => {
 
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
-    // console.log("1 document found");
     if (ress !== null) {
-      // app.use(session({
-      //   name: 'server_ssID',
-      //   secret: 'keyboard cat',
-      //   resave: false,
-      //   saveUninitialized: true,
-      //   withCredentials: true,
-      //   cookie: {
-      //   sameSite: 'none',
-      //   secure: true,
-      //   httpOnly: true,
-      //   maxAge: 1000 * 60 * 60 * 24 },
-      //   domain : "https://vercelreact-taupe.vercel.app",
-      //   store: MongoStore.create({
-      //     mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
-      //     collectionName: "sessions" // See below for details
-      //   })
-      // }));
-      collection.updateOne( { _id: req.signedCookies.server_ssID }, { $set: { email: req.body.email } } ) 
+      collection.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}});
       res.send({"result": "Logged in: " + ress.email, "isLoggedIn" : true});
-
     } else {
       res.send({"result": "We couldn't find an account with that email address", "isLoggedIn" : false});
     }
