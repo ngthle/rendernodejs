@@ -124,20 +124,19 @@ app.post("/login", urlencodedParser, async (req, res) => {
   client.connect(err => {
   const collection = client.db("test").collection("devices");
   // perform actions on the collection object
-  var myQuery = { email: req.body.email,
-                  password: req.body.password};
+  var myQuery = {email: req.body.email, password: req.body.password};
 
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
       collection.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}});
-      res.send({"result": "Logged in: " + ress.email, "isLoggedIn" : true});
+      res.send({"result": "Logged in: " + ress.email, "isLoggedIn": true});
     } else {
-      res.send({"result": "We couldn't find an account with that email address", "isLoggedIn" : false});
+      res.send({"result": "We couldn't find an account with that email address", "isLoggedIn": false});
     }
+  });  
+  });
   client.close();
-  });
-  });
 });
 
 app.post("/check-email", urlencodedParser, async (req, res) => {
