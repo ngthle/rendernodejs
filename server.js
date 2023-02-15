@@ -167,10 +167,33 @@ app.post("/check-email", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      res.send({"result": "An account with email " + ress.email + " already exist.", "status": "message-invalid"});
+      res.send({"result": "An account with email " + ress.email + " already exist.", "status": false});
     } else {
-      res.send({"result": "You can use this email.", "status": "message-valid"});
+      res.send({"result": "You can use this email.", "status": true});
     }
+  client.close();
+  });
+  });
+});
+
+app.post("/registration", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  var myQuery = {
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    email: req.body.email,
+    password: req.body.password
+  };
+
+  collection.insertOne(myQuery, function(err, ress) {
+    if (err) throw err;
+    res.send({"result": ress.acknowledged});
   client.close();
   });
   });
