@@ -16,11 +16,10 @@ app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   next();
   app.options('/', (req, res) => {
-        // allowed XHR methods
-        res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
-        res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-        res.send();
+    res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.send();
   });
 });
 
@@ -34,32 +33,6 @@ app.use(cookieParser("keyboard cat"));
 app.set('trust proxy', 1);
 
 app.use(require("body-parser").json());
-
-// app.get('/', function (req, res) {
-//   // Cookies that have not been signed
-//   //console.log('Cookies: ', req.cookies)
-//
-//   // Cookies that have been signed
-//   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID)
-// })
-
-app.use(session({
-    name: 'server_ssID',
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-    withCredentials: true,
-    cookie: {
-    sameSite: 'none',
-    secure: true,
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 },
-    domain : "https://vercelreact-taupe.vercel.app",
-    store: MongoStore.create({
-      mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
-      collectionName: "sessions" // See below for details
-    })
-  }));
 
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
@@ -76,9 +49,7 @@ app.get("/", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("sessions");
-  // perform actions on the collection object
   var myQuery = { _id: req.signedCookies.server_ssID};
-
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
@@ -109,7 +80,7 @@ app.get("/", urlencodedParser, async (req, res) => {
     domain : "https://vercelreact-taupe.vercel.app",
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
-      collectionName: "sessions" // See below for details
+      collectionName: "sessions"
     })
   }));
   res.send({"result": "Hello world", "isLoggedIn" : false});
@@ -169,7 +140,7 @@ app.post("/registration", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("devices");
-  // perform actions on the collection object
+
   var myQuery = {
     firstName: req.body.firstName,
     lastName: req.body.lastName,
