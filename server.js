@@ -1,12 +1,11 @@
 const express = require("express");
-const cors = require('cors');
 const app = express();
-
+const cors = require('cors');
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
-const cookieParser = require('cookie-parser');
 
+const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
@@ -117,7 +116,7 @@ app.get("/", urlencodedParser, async (req, res) => {
 }});
 
 app.post("/login", urlencodedParser, async (req, res) => {
-
+  const userID = req.signedCookies.server_ssID;
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -130,7 +129,8 @@ app.post("/login", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      sessionsDB.updateOne({_id: req.signedCookies.server_ssID }, {$set: {email: req.body.email}},{upsert: true});
+      res.cookie('userEmail', req.body.email, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
+      sessionsDB.updateOne({_id: userID}, {$set: {email: req.body.email}}, {upsert: true});
       res.send({"result": "Logged in: " + ress.email, "isLoggedIn": true});
     } else {
       res.send({"result": "We couldn't find an account with that email address", "isLoggedIn": false});
