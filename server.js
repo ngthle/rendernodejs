@@ -34,6 +34,25 @@ app.set('trust proxy', 1);
 
 app.use(require("body-parser").json());
 
+
+app.use(session({
+  name: 'server_ssID',
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  withCredentials: true,
+  cookie: {
+  sameSite: 'none',
+  secure: true,
+  httpOnly: true,
+  maxAge: 1000 * 60 * 60 * 24 },
+  domain : "https://vercelreact-taupe.vercel.app",
+  store: MongoStore.create({
+    mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
+    collectionName: "sessions"
+  })
+}));
+
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -42,8 +61,8 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-  if(req.signedCookies.server_ssID) {
 
+  if(req.signedCookies.server_ssID) {
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -65,26 +84,7 @@ app.get("/", urlencodedParser, async (req, res) => {
   client.close();
   });
   });
-} else {
-  app.use(session({
-    name: 'server_ssID',
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-    withCredentials: true,
-    cookie: {
-    sameSite: 'none',
-    secure: true,
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 },
-    domain : "https://vercelreact-taupe.vercel.app",
-    store: MongoStore.create({
-      mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
-      collectionName: "sessions"
-    })
-  }));
-  res.send({"result": "Hello world", "isLoggedIn" : false});
-}});
+});
 
 app.post("/login", urlencodedParser, async (req, res) => {
   const userID = req.signedCookies.server_ssID;
