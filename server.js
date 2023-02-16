@@ -61,14 +61,15 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-
   if(req.signedCookies.server_ssID) {
+
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("sessions");
-  var myQuery = { _id: req.signedCookies.server_ssID};
+  var myQuery = {_id: req.signedCookies.server_ssID};
+
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
@@ -84,7 +85,9 @@ app.get("/", urlencodedParser, async (req, res) => {
   client.close();
   });
   });
-};
+} else {
+  res.send({"result": "Hello world", "isLoggedIn" : false});
+}});
 
 app.post("/login", urlencodedParser, async (req, res) => {
   const userID = req.signedCookies.server_ssID;
@@ -140,7 +143,7 @@ app.post("/registration", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("devices");
-
+  // perform actions on the collection object
   var myQuery = {
     firstName: req.body.firstName,
     lastName: req.body.lastName,
