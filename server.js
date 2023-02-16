@@ -84,7 +84,7 @@ app.get("/", urlencodedParser, async (req, res) => {
   client.close();
   });
   });
-});
+};
 
 app.post("/login", urlencodedParser, async (req, res) => {
   const userID = req.signedCookies.server_ssID;
