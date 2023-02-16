@@ -4,6 +4,7 @@ const cors = require('cors');
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
+let userID;
 
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -62,7 +63,7 @@ app.get("/", urlencodedParser, async (req, res) => {
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
   if(req.signedCookies.server_ssID) {
-
+  userID = req.signedCookies.server_ssID;
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -90,7 +91,6 @@ app.get("/", urlencodedParser, async (req, res) => {
 }});
 
 app.post("/login", urlencodedParser, async (req, res) => {
-  const userID = req.signedCookies.server_ssID;
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
