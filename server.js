@@ -159,5 +159,26 @@ app.post("/registration", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/user/profile", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  var myQuery = {email: req.body.email};
+
+  collection.findOne(myQuery, function(err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({"isFound": true, "firstName": ress.firstName, "lastName": lastName, "email": ress.email});
+    } else {
+      res.send({"isFound": false});
+    }
+  client.close();
+  });
+  });
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, console.log(`Server started on port ${PORT}`));
