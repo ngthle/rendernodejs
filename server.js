@@ -171,7 +171,7 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      res.send({"isFound": true, "firstName": ress.firstName, "lastName": lastName, "email": ress.email});
+      res.send({"isFound": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email});
     } else {
       res.send({"isFound": false});
     }
