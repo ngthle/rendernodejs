@@ -63,37 +63,39 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-  if(req.signedCookies.server_ssID) {
-  userID = req.signedCookies.server_ssID;
-  const { MongoClient, ServerApiVersion } = require('mongodb');
-  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-  client.connect(err => {
-  const collection = client.db("test").collection("sessions");
-  const userDB = client.db("test").collection("devices");
-  var myQuery = {_id: req.signedCookies.server_ssID};
+  if (req.signedCookies.server_ssID) {
+    const sessionID = req.signedCookies.server_ssID;
+    const { MongoClient, ServerApiVersion } = require('mongodb');
+    const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    client.connect(err => {
+      const sessionDB = client.db("test").collection("sessions");
+      const userDB = client.db("test").collection("devices");
+      const sessionQuery = { _id: req.signedCookies.server_ssID };
 
-  collection.findOne(myQuery, function(err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      if (ress.email) {
-        userEmail = ress.email;
-        userDB.findOne({email: userEmail}, function(userErr, userRes) {
-        if (userErr) throw userErr;
-        res.send({"result": "Hi my old friend!","isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email});});
-        console.log(ress.email + " has logged in");
-      } else {
-        res.send({"result": "Hello my old guest!" + ress.session, "isLoggedIn" : false});
-      }
-    } else {
-      res.send({"result": "Your session has ended", "isLoggedIn" : false});
-    }
-  client.close();
-  });
-  });
-} else {
-  res.send({"result": "Nice to meeet you", "isLoggedIn" : false});
-}});
+      sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
+        if (sessionErr) throw sessionErr;
+        if (sessionRes !== null) {
+          if (sessionRes.email) {
+            userEmail = sessionRes.email;
+            userDB.findOne({ email: userEmail }, function (userErr, userRes) {
+              if (userErr) throw userErr;
+              console.log(sessionRes.email + " has logged in");
+              sessionRes.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
+            });
+          } else {
+            sessionRes.send({ "result": "Hi good old " + ress.session, "isLoggedIn": false });
+          }
+        } else {
+          res.send({ "result": "Your session has ended", "isLoggedIn": false });
+        }
+        client.close();
+      });
+    });
+  } else {
+    res.send({ "result": "Nice to meeet you", "isLoggedIn": false });
+  }
+});
 
 app.post("/login", urlencodedParser, async (req, res) => {
   const { MongoClient, ServerApiVersion } = require('mongodb');
