@@ -75,19 +75,19 @@ app.get("/", urlencodedParser, async (req, res) => {
     if (err) throw err;
     if (ress !== null) {
       if (ress.email) {
-        res.send({"result": "Hi " + ress.session, "isLoggedIn" : true, "email" : ress.email});
+        res.send({"result": "Hi my old friend!","isLoggedIn": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email});
         console.log(ress.email + " has logged in");
       } else {
-        res.send({"result": "Hi guest" + ress.session, "isLoggedIn" : false});
+        res.send({"result": "Hello my old guest!" + ress.session, "isLoggedIn" : false});
       }
     } else {
-      res.send({"result": "You are not logged in", "isLoggedIn" : false});
+      res.send({"result": "Your session has ended", "isLoggedIn" : false});
     }
   client.close();
   });
   });
 } else {
-  res.send({"result": "Hello world", "isLoggedIn" : false});
+  res.send({"result": "Nice to meeet you", "isLoggedIn" : false});
 }});
 
 app.post("/login", urlencodedParser, async (req, res) => {
