@@ -69,13 +69,16 @@ app.get("/", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
   const collection = client.db("test").collection("sessions");
+  const userDB = client.db("test").collection("devices");
   var myQuery = {_id: req.signedCookies.server_ssID};
 
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
       if (ress.email) {
-        res.send({"result": "Hi my old friend!","isLoggedIn": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email});
+        userDB.findOne({email: ress.email}, function(userErr, userRes) {
+        if (userErr) throw userErr;
+        res.send({"result": "Hi my old friend!","isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email});});
         console.log(ress.email + " has logged in");
       } else {
         res.send({"result": "Hello my old guest!" + ress.session, "isLoggedIn" : false});
@@ -97,7 +100,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
   client.connect(err => {
   const collection = client.db("test").collection("devices");
   const sessionsDB = client.db("test").collection("sessions");
-  // perform actions on the collection object
+
   var myQuery = {email: req.body.email, password: req.body.password};
 
   collection.findOne(myQuery, function(err, ress) {
