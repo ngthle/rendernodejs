@@ -84,7 +84,7 @@ app.get("/", urlencodedParser, async (req, res) => {
               res.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
             });
           } else {
-            res.send({ "result": "Hi good old " + ress.session, "isLoggedIn": false });
+            res.send({ "result": "Hi good old " + sessionRes.session, "isLoggedIn": false });
           }
         } else {
           res.send({ "result": "Your session has ended", "isLoggedIn": false });
