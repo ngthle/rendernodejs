@@ -81,13 +81,13 @@ app.get("/", urlencodedParser, async (req, res) => {
             userDB.findOne({ email: userEmail }, function (userErr, userRes) {
               if (userErr) throw userErr;
               console.log(sessionRes.email + " has logged in");
-              sessionRes.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
+              res.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
             });
           } else {
-            sessionRes.send({ "result": "Hi good old " + ress.session, "isLoggedIn": false });
+            res.send({ "result": "Hi good old " + ress.session, "isLoggedIn": false });
           }
         } else {
-          sessionRes.send({ "result": "Your session has ended", "isLoggedIn": false });
+          res.send({ "result": "Your session has ended", "isLoggedIn": false });
         }
       });
     });
