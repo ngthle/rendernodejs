@@ -89,11 +89,11 @@ app.get("/", urlencodedParser, async (req, res) => {
         } else {
           sessionRes.send({ "result": "Your session has ended", "isLoggedIn": false });
         }
-        client.close();
       });
     });
+    client.close();
   } else {
-    sessionRes.send({ "result": "Nice to meeet you", "isLoggedIn": false });
+    res.send({ "result": "Nice to meeet you", "isLoggedIn": false });
   }
 });
 
