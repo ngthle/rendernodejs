@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 let userID;
+let userEmail;
 
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -76,7 +77,8 @@ app.get("/", urlencodedParser, async (req, res) => {
     if (err) throw err;
     if (ress !== null) {
       if (ress.email) {
-        userDB.findOne({email: ress.email}, function(userErr, userRes) {
+        userEmail = ress.email;
+        userDB.findOne({email: userEmail}, function(userErr, userRes) {
         if (userErr) throw userErr;
         res.send({"result": "Hi my old friend!","isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email});});
         console.log(ress.email + " has logged in");
