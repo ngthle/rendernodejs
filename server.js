@@ -187,5 +187,26 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/signout", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+  const sessionDB = client.db("test").collection("sessions");
+  var myQuery = {_id: sessionID, email: req.body.email};
+
+  sessionDB.deleteOne(myQuery, function(sessionErr, sessionRes) {
+    if (sessionErr) throw sessionErr;
+    if (sessionRes !== null) {
+      res.send({"result": "Signed Out", "email": sessionRes.email});
+    } else {
+      res.send({"result": "Email not found"});
+    }
+  client.close();
+  });
+  });
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, console.log(`Server started on port ${PORT}`));
