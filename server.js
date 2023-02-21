@@ -64,9 +64,6 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-  if (req.signedCookies.sessionInfo) {
-    console.log('sessionInfo: ', req.signedCookies.sessionInfo);
-  }
 
   if (req.signedCookies.server_ssID) {
     sessionID = req.signedCookies.server_ssID;
@@ -85,9 +82,6 @@ app.get("/", urlencodedParser, async (req, res) => {
             userEmail = sessionRes.email;
             userDB.findOne({ email: userEmail }, function (userErr, userRes) {
               if (userErr) throw userErr;
-              if (!req.signedCookies.sessionInfo) {
-                res.cookie('sessionInfo', userRes.email, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
-              }
               console.log(sessionRes.email + " has logged in");
               res.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
             });
@@ -206,13 +200,9 @@ app.post("/signout", urlencodedParser, async (req, res) => {
     sessionDB.deleteOne(myQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
       if (sessionRes !== null) {
-        console.log(req.body.email + 'has signed out');
-        res.clearCookie('server_ssID', { path: '/' });
-        res.clearCookie('sessionInfo', { path: '/' });
+        console.log(req.body.email + 'has signed out');  
         res.send({ "result": "Signed Out", "email": sessionRes.email });
       } else {
-        res.clearCookie('server_ssID', { path: '/' });
-        res.clearCookie('sessionInfo', { path: '/' });
         res.send({ "result": "Email not found" });
       }
       client.close();
