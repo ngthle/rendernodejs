@@ -63,6 +63,10 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
+  if (req.signedCookies.sessionInfo) {
+    console.log('sessionInfo: ', req.signedCookies.sessionInfo);
+  }
+
   if (req.signedCookies.server_ssID) {
     sessionID = req.signedCookies.server_ssID;
     const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -110,7 +114,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
   collection.findOne(myQuery, function(err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      res.cookie('userEmail', req.body.email, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
+      res.cookie('sessionInfo', {"isLoggedIn": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email}, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
       sessionsDB.updateOne({_id: sessionID}, {$set: {email: req.body.email}}, {upsert: true});
       res.send({"result": "Logged in: " + ress.email, "isLoggedIn": true});
     } else {
