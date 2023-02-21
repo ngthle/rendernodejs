@@ -86,7 +86,7 @@ app.get("/", urlencodedParser, async (req, res) => {
             userDB.findOne({ email: userEmail }, function (userErr, userRes) {
               if (userErr) throw userErr;
               if (!req.signedCookies.sessionInfo) {
-                res.cookie('sessionInfo', { "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email }, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
+                res.cookie('sessionInfo', userRes.email, { sameSite: 'none', secure: true, httpOnly: true, maxAge: 1000 * 60 * 60 * 24, signed: true });
               }
               console.log(sessionRes.email + " has logged in");
               res.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
@@ -208,9 +208,11 @@ app.post("/signout", urlencodedParser, async (req, res) => {
       if (sessionRes !== null) {
         console.log(req.body.email + 'has signed out');
         res.clearCookie('server_ssID', { path: '/' });
+        res.clearCookie('sessionInfo', { path: '/' });
         res.send({ "result": "Signed Out", "email": sessionRes.email });
       } else {
         res.clearCookie('server_ssID', { path: '/' });
+        res.clearCookie('sessionInfo', { path: '/' });
         res.send({ "result": "Email not found" });
       }
       client.close();
