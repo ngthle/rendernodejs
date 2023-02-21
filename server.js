@@ -199,8 +199,10 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   sessionDB.deleteOne(myQuery, function(sessionErr, sessionRes) {
     if (sessionErr) throw sessionErr;
     if (sessionRes !== null) {
+      res.clearCookie('server_ssID', { path: '/' });
       res.send({"result": "Signed Out", "email": sessionRes.email});
     } else {
+      res.clearCookie('server_ssID', { path: '/' });
       res.send({"result": "Email not found"});
     }
   client.close();
