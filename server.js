@@ -206,10 +206,10 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       orderType: req.body.orderType,
       deliveryMethod: req.body.deliveryMethod,
       collectAddress: req.body.collectAddress,
-      order : req.body.orderItems
+      order: req.body.orderItems
     };
 
-    collection.insertOne(myQuery, function (err, ress) {
+    ordersDB.insertOne(myQuery, function (err, ress) {
       if (err) throw err;
       res.send({ "result": ress.acknowledged });
       client.close();
