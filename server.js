@@ -228,7 +228,11 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
 
     orderDB.find(orderQuery, function (orderErr, orderRes) {
       if (orderErr) throw orderErr;
-      res.send({ "result": orderRes});
+      if (orderRes !== null) {
+        res.send({ "result": orderRes});
+      } else {
+        res.send({ "result": "Not found" });
+      }
       client.close();
     });
   });
