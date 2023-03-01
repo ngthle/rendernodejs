@@ -207,9 +207,28 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       order: req.body.order
     };
 
-    orderDB.insertOne(orderQuery, function (err, ress) {
-      if (err) throw err;
-      res.send({ "result": ress.acknowledged });
+    orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
+      if (orderErr) throw orderErr;
+      res.send({ "result": orderRes.acknowledged });
+      client.close();
+    });
+  });
+});
+
+app.post("/get-orders", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const orderDB = client.db("test").collection("orders");
+    var orderQuery = {
+      email: req.body.email
+    };
+
+    orderDB.find(orderQuery, function (orderErr, orderRes) {
+      if (orderErr) throw orderErr;
+      res.send({ "result": orderRes});
       client.close();
     });
   });
