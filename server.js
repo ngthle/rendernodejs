@@ -72,7 +72,7 @@ app.get("/", urlencodedParser, async (req, res) => {
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
     client.connect(err => {
       const sessionDB = client.db("test").collection("sessions");
-      const userDB = client.db("test").collection("devices");
+      const userDB = client.db("test").collection("users");
       const sessionQuery = { _id: req.signedCookies.server_ssID };
 
       sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
@@ -104,15 +104,15 @@ app.post("/login", urlencodedParser, async (req, res) => {
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    const sessionsDB = client.db("test").collection("sessions");
+    const userDB = client.db("test").collection("users");
+    const sessionDB = client.db("test").collection("sessions");
 
-    var myQuery = { email: req.body.email, password: req.body.password };
+    var userQuery = { email: req.body.email, password: req.body.password };
 
-    collection.findOne(myQuery, function (err, ress) {
+    userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        sessionsDB.updateOne({ _id: sessionID }, { $set: { email: req.body.email } }, { upsert: true });
+        sessionDB.updateOne({ _id: sessionID }, { $set: { email: req.body.email } }, { upsert: true });
         res.send({ "result": "Logged in: " + ress.email, "isLoggedIn": true });
       } else {
         res.send({ "result": "We couldn't find an account with that email address", "isLoggedIn": false });
@@ -128,11 +128,10 @@ app.post("/check-email", urlencodedParser, async (req, res) => {
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    // perform actions on the collection object
-    var myQuery = { email: req.body.email };
+    const userDB = client.db("test").collection("users");
+    var userQuery = { email: req.body.email };
 
-    collection.findOne(myQuery, function (err, ress) {
+    userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
         res.send({ "result": "An account with email " + ress.email + " already exist.", "status": false });
@@ -150,16 +149,15 @@ app.post("/registration", urlencodedParser, async (req, res) => {
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    // perform actions on the collection object
-    var myQuery = {
+    const userDB = client.db("test").collection("users");
+    var userQuery = {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
       password: req.body.password
     };
 
-    collection.insertOne(myQuery, function (err, ress) {
+    userDB.insertOne(userQuery, function (err, ress) {
       if (err) throw err;
       res.send({ "result": ress.acknowledged });
       client.close();
@@ -173,10 +171,10 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    var myQuery = { email: req.body.email };
+    const userDB = client.db("test").collection("users");
+    var userQuery = { email: req.body.email };
 
-    collection.findOne(myQuery, function (err, ress) {
+    userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
         res.send({ "isFound": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email });
@@ -194,8 +192,8 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
-    const ordersDB = client.db("test").collection("orders");
-    var myQuery = {
+    const orderDB = client.db("test").collection("orders");
+    var orderQuery = {
       time: req.body.time,
       email: req.body.email,
       firstName: req.body.firstName,
@@ -206,10 +204,10 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       orderType: req.body.orderType,
       deliveryMethod: req.body.deliveryMethod,
       collectAddress: req.body.collectAddress,
-      order: req.body.orderItems
+      order: req.body.order
     };
 
-    ordersDB.insertOne(myQuery, function (err, ress) {
+    orderDB.insertOne(orderQuery, function (err, ress) {
       if (err) throw err;
       res.send({ "result": ress.acknowledged });
       client.close();
@@ -224,9 +222,9 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const sessionDB = client.db("test").collection("sessions");
-    var myQuery = { _id: sessionID, email: req.body.email };
+    var sessionQuery = { _id: sessionID, email: req.body.email };
 
-    sessionDB.deleteOne(myQuery, function (sessionErr, sessionRes) {
+    sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
       if (sessionRes !== null) {
         console.log(req.body.email + 'has signed out');  
