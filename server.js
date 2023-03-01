@@ -188,6 +188,35 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/place-order", urlencodedParser, async (req, res) => {
+
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const ordersDB = client.db("test").collection("orders");
+    var myQuery = {
+      time: req.body.time,
+      email: req.body.email,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      address: req.body.address,
+      city: req.body.city,
+      county: req.body.county,
+      orderType: req.body.orderType,
+      deliveryMethod: req.body.deliveryMethod,
+      collectAddress: req.body.collectAddress,
+      order : req.body.orderItems
+    };
+
+    collection.insertOne(myQuery, function (err, ress) {
+      if (err) throw err;
+      res.send({ "result": ress.acknowledged });
+      client.close();
+    });
+  });
+});
+
 app.post("/signout", urlencodedParser, async (req, res) => {
 
   const { MongoClient, ServerApiVersion } = require('mongodb');
