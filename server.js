@@ -226,9 +226,9 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
       email: req.body.email
     };
 
-    orderDB.findOne(orderQuery, function (orderErr, orderRes) {
+    orderDB.find({}, { projection: { orderQuery } }).toArray(function(orderErr, orderRes) {
       if (orderErr) throw orderErr;
-      if (orderRes !== null) {
+      if (orderRes.length > 0) {
         res.send({ "result": orderRes});
       } else {
         res.send({ "result": "Not found" });
