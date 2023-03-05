@@ -234,7 +234,6 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
       }
       client.close();
     });
-  });
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
