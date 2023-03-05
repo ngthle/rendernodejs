@@ -226,10 +226,9 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
       email: req.body.email
     };
 
-    orderDB.find(orderQuery, function (orderErr, orderRes) {
-      if (orderErr) throw orderErr;
-      if (orderRes !== null) {
-        res.send({ "result": orderRes});
+    const arr = orderDB.find(orderQuery);
+      if (arr !== null) {
+        res.send({ "result": arr});
       } else {
         res.send({ "result": "Not found" });
       }
