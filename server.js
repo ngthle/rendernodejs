@@ -226,14 +226,16 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
       email: req.body.email
     };
 
-    const arr = orderDB.find(orderQuery);
-      if (arr !== null) {
-        res.send({ "result": arr});
+    orderDB.findOne(orderQuery, function (orderErr, orderRes) {
+      if (orderErr) throw orderErr;
+      if (orderRes !== null) {
+        res.send({ "result": orderRes});
       } else {
         res.send({ "result": "Not found" });
       }
       client.close();
     });
+  });
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
