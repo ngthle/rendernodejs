@@ -203,6 +203,7 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       county: req.body.county,
       orderType: req.body.orderType,
       deliveryMethod: req.body.deliveryMethod,
+      deliveryFee: req.body.deliveryFee,
       collectAddress: req.body.collectAddress,
       order: req.body.order,
       totalQuantity: req.body.totalQuantity,
