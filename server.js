@@ -204,7 +204,10 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       orderType: req.body.orderType,
       deliveryMethod: req.body.deliveryMethod,
       collectAddress: req.body.collectAddress,
-      order: req.body.order
+      order: req.body.order,
+      totalQuantity: req.body.totalQuantity,
+      totalPay: req.body.totalPay,
+      status: "Delivered"
     };
 
     orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
@@ -226,7 +229,7 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
       email: req.body.email
     };
 
-    orderDB.find({}, { projection: { orderQuery } }).toArray(function(orderErr, orderRes) {
+    orderDB.find({}, { projection: { _id: 0, firstName: 1, lastName: 1,  email: req.body.email, address: 1, city: 1, county: 1, orderType: 1, deliveryMethod: 1, deliveryFee: 1, time: 1, order: 1, collectAddress: 1, totalQuantity: 1, totalPay: 1, status: 1 } }).toArray(function(orderErr, orderRes) {
       if (orderErr) throw orderErr;
       if (orderRes.length > 0) {
         res.send({ "result": orderRes});
