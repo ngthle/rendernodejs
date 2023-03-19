@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 let sessionID;
-let userEmail;
+let userIDServer;
 
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -78,12 +78,19 @@ app.get("/", urlencodedParser, async (req, res) => {
       sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
         if (sessionErr) throw sessionErr;
         if (sessionRes !== null) {
-          if (sessionRes.email) {
-            userEmail = sessionRes.email;
-            userDB.findOne({ email: userEmail }, function (userErr, userRes) {
+          if (sessionRes.userID) {
+            userIDServer = sessionRes.userID;
+            userDB.findOne({ userID: userIDServer }, function (userErr, userRes) {
               if (userErr) throw userErr;
-              console.log(sessionRes.email + " has logged in");
-              res.send({ "result": "Hi " + userRes.firstName + userRes.lastName, "isLoggedIn": true, "firstName": userRes.firstName, "lastName": userRes.lastName, "email": userRes.email });
+              console.log(sessionRes.userID + " has logged in");
+              res.send({
+                "result": "Hi " + userRes.firstName + userRes.lastName,
+                "isLoggedIn": true,
+                "userID" : userRes.userID,
+                "firstName": userRes.firstName,
+                "lastName": userRes.lastName,
+                "email": userRes.email
+              });
             });
           } else {
             res.send({ "result": "Hi good old " + sessionRes.session, "isLoggedIn": false });
@@ -112,8 +119,8 @@ app.post("/login", urlencodedParser, async (req, res) => {
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        sessionDB.updateOne({ _id: sessionID }, { $set: { email: req.body.email } }, { upsert: true });
-        res.send({ "result": "Logged in: " + ress.email, "isLoggedIn": true });
+        sessionDB.updateOne({ _id: sessionID }, { $set: { userID: ress.UserID } }, { upsert: true });
+        res.send({ "result": "Logged in: " + ress.UserID, "isLoggedIn": true });
       } else {
         res.send({ "result": "We couldn't find an account with that email address", "isLoggedIn": false });
       }
@@ -149,7 +156,7 @@ app.post("/check-password", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const userDB = client.db("test").collection("users");
-    var userQuery = { email: req.body.email, password: req.body.password };
+    var userQuery = { userID: req.body.userID, password: req.body.password };
 
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
@@ -169,12 +176,12 @@ app.post("/change-password", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const userDB = client.db("test").collection("users");
-    var userQuery = { email: req.body.email, password: req.body.password };
+    var userQuery = { userID: req.body.userID, password: req.body.password };
 
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        userDB.updateOne({ email: req.body.email }, { $set: { password: req.body.newPassword } }, { upsert: true });
+        userDB.updateOne({ userID: req.body.userID }, { $set: { password: req.body.newPassword } }, { upsert: true });
         res.send({ "result": "Password has changed.", "status": true });
       } else {
         res.send({ "result": "Not found.", "status": false });
@@ -191,12 +198,12 @@ app.post("/change-email", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const userDB = client.db("test").collection("users");
-    var userQuery = { email: req.body.email };
+    var userQuery = { userID: req.body.userID };
 
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        userDB.updateOne({ email: req.body.email }, { $set: { email: req.body.newEmail } }, { upsert: true });
+        userDB.updateOne({ userID: req.body.userID }, { $set: { email: req.body.newEmail } }, { upsert: true });
         res.send({ "result": "Email has changed.", "status": true });
       } else {
         res.send({ "result": "Not found.", "status": false });
@@ -207,13 +214,14 @@ app.post("/change-email", urlencodedParser, async (req, res) => {
 });
 
 app.post("/registration", urlencodedParser, async (req, res) => {
-
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const userDB = client.db("test").collection("users");
     var userQuery = {
+      createdTime: req.body.createdTime,
+      userID: req.body.userID,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
@@ -235,12 +243,12 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const userDB = client.db("test").collection("users");
-    var userQuery = { email: req.body.email };
+    var userQuery = { userID: req.body.userID };
 
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        res.send({ "isFound": true, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email });
+        res.send({ "isFound": true, "userID": ress.userID, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email });
       } else {
         res.send({ "isFound": false });
       }
@@ -257,6 +265,7 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   client.connect(err => {
     const orderDB = client.db("test").collection("orders");
     var orderQuery = {
+      userID: req.body.userID,
       time: req.body.time,
       email: req.body.email,
       firstName: req.body.firstName,
@@ -290,7 +299,7 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
   client.connect(err => {
     const orderDB = client.db("test").collection("orders");
     var orderQuery = {
-      email: req.body.email
+      userID: req.body.userID
     };
 
     orderDB.find({}, { projection: { _id: 0, firstName: 1, lastName: 1,  email: req.body.email, address: 1, city: 1, county: 1, orderType: 1, deliveryMethod: 1, deliveryFee: 1, time: 1, order: 1, collectAddress: 1, totalQuantity: 1, totalPay: 1, status: 1 } }).toArray(function(orderErr, orderRes) {
@@ -312,15 +321,15 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
   client.connect(err => {
     const sessionDB = client.db("test").collection("sessions");
-    var sessionQuery = { _id: sessionID, email: req.body.email };
+    var sessionQuery = { _id: sessionID, userID: req.body.userID };
 
     sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
       if (sessionRes !== null) {
-        console.log(req.body.email + 'has signed out');  
-        res.send({ "result": "Signed Out", "email": sessionRes.email });
+        console.log(req.body.userID + 'has signed out');  
+        res.send({ "result": "Signed Out", "userID": sessionRes.userID });
       } else {
-        res.send({ "result": "Email not found" });
+        res.send({ "result": "UserID not found" });
       }
       client.close();
     });
