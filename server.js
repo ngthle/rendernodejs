@@ -119,8 +119,8 @@ app.post("/login", urlencodedParser, async (req, res) => {
     userDB.findOne(userQuery, function (err, ress) {
       if (err) throw err;
       if (ress !== null) {
-        sessionDB.updateOne({ _id: sessionID }, { $set: { userID: ress.UserID } }, { upsert: true });
-        res.send({ "result": "Logged in: " + ress.UserID, "isLoggedIn": true });
+        sessionDB.updateOne({ _id: sessionID }, { $set: { userID: ress.userID } }, { upsert: true });
+        res.send({ "result": "Logged in: " + ress.userID, "isLoggedIn": true });
       } else {
         res.send({ "result": "We couldn't find an account with that email address", "isLoggedIn": false });
       }
