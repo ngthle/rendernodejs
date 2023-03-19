@@ -143,6 +143,69 @@ app.post("/check-email", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/check-password", urlencodedParser, async (req, res) => {
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const userDB = client.db("test").collection("users");
+    var userQuery = { email: req.body.email, password: req.body.password };
+
+    userDB.findOne(userQuery, function (err, ress) {
+      if (err) throw err;
+      if (ress !== null) {
+        res.send({ "result": "Password matched.", "status": true });
+      } else {
+        res.send({ "result": "The password you entered is incorrect. Please try again.", "status": false });
+      }
+      client.close();
+    });
+  });
+});
+
+app.post("/change-password", urlencodedParser, async (req, res) => {
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const userDB = client.db("test").collection("users");
+    var userQuery = { email: req.body.email, password: req.body.password };
+
+    userDB.findOne(userQuery, function (err, ress) {
+      if (err) throw err;
+      if (ress !== null) {
+        userDB.updateOne({ email: req.body.email }, { $set: { password: req.body.newPassword } }, { upsert: true });
+        res.send({ "result": "Password has changed.", "status": true });
+      } else {
+        res.send({ "result": "Not found.", "status": false });
+      }
+    });
+  });
+  client.close();
+  // important
+});
+
+app.post("/change-email", urlencodedParser, async (req, res) => {
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const userDB = client.db("test").collection("users");
+    var userQuery = { email: req.body.email };
+
+    userDB.findOne(userQuery, function (err, ress) {
+      if (err) throw err;
+      if (ress !== null) {
+        userDB.updateOne({ email: req.body.email }, { $set: { email: req.body.newEmail } }, { upsert: true });
+        res.send({ "result": "Email has changed.", "status": true });
+      } else {
+        res.send({ "result": "Not found.", "status": false });
+      }
+    });
+  });
+  client.close();
+});
+
 app.post("/registration", urlencodedParser, async (req, res) => {
 
   const { MongoClient, ServerApiVersion } = require('mongodb');
