@@ -170,6 +170,32 @@ app.post("/check-password", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/change-details", urlencodedParser, async (req, res) => {
+  const { MongoClient, ServerApiVersion } = require('mongodb');
+  const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+  client.connect(err => {
+    const userDB = client.db("test").collection("users");
+    var userQuery = { userID: req.body.userID};
+
+    userDB.findOne(userQuery, function (err, ress) {
+      if (err) throw err;
+      if (ress !== null) {
+        userDB.updateOne({ userID: req.body.userID },
+        { $set: {
+          firstName: req.body.newFirstName,
+          lastName: req.body.newLastName,
+          phoneNumber: req.body.newPhoneNumber
+        } }, { upsert: true });
+        res.send({ "result": "Details has changed.", "status": true });
+      } else {
+        res.send({ "result": "Not found.", "status": false });
+      }
+    });
+  });
+  client.close();
+});
+
 app.post("/change-password", urlencodedParser, async (req, res) => {
   const { MongoClient, ServerApiVersion } = require('mongodb');
   const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
