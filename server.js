@@ -89,7 +89,8 @@ app.get("/", urlencodedParser, async (req, res) => {
                 "userID" : userRes.userID,
                 "firstName": userRes.firstName,
                 "lastName": userRes.lastName,
-                "email": userRes.email
+                "email": userRes.email,
+                "phoneNumber": userRes.phoneNumber
               });
             });
           } else {
