@@ -291,6 +291,18 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   });
 });
 
+
+    // orderDB.find({}, { projection: { _id: 0, userID: req.body.userID, firstName: 1, lastName: 1,  email: 1, address: 1, city: 1, county: 1, orderType: 1, deliveryMethod: 1, deliveryFee: 1, time: 1, order: 1, collectAddress: 1, totalQuantity: 1, totalPay: 1, status: 1 } }).toArray(function(orderErr, orderRes) {
+    //   if (orderErr) throw orderErr;
+    //   if (orderRes.length > 0) {
+    //     res.send({ "result": orderRes});
+    //   } else {
+    //     res.send({ "result": "Not found" });
+    //   }
+    //   client.close();
+    // });
+
+
 app.post("/get-orders", urlencodedParser, async (req, res) => {
 
   const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -301,7 +313,7 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
     var orderQuery = {
       userID: req.body.userID
     };
-    orderDB.find({}, { projection: { _id: 0, userID: req.body.userID, firstName: 1, lastName: 1,  email: 1, address: 1, city: 1, county: 1, orderType: 1, deliveryMethod: 1, deliveryFee: 1, time: 1, order: 1, collectAddress: 1, totalQuantity: 1, totalPay: 1, status: 1 } }).toArray(function(orderErr, orderRes) {
+    orderDB.find(orderQuery).toArray(function(orderErr, orderRes) {
       if (orderErr) throw orderErr;
       if (orderRes.length > 0) {
         res.send({ "result": orderRes});
