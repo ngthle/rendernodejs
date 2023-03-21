@@ -10,6 +10,7 @@ let userIDServer;
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const PORT = process.env.PORT || 10000;
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
@@ -62,6 +63,7 @@ const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect((err, database) => {
   if(err) throw err;
+  app.listen(PORT, console.log(`Server started on port ${PORT}`));
 });
 
 const userDB = client.db("test").collection("users");
