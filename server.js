@@ -4,13 +4,12 @@ const cors = require('cors');
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
-let sessionID;
+// let sessionID;
 let userIDServer;
 
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const PORT = process.env.PORT || 10000;
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
@@ -63,6 +62,7 @@ const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect((err, database) => {
   if(err) throw err;
+  const PORT = process.env.PORT || 10000;
   app.listen(PORT, console.log(`Server started on port ${PORT}`));
 });
 
@@ -76,13 +76,10 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-
   console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-
   if (req.signedCookies.server_ssID) {
-    sessionID = req.signedCookies.server_ssID;
+    // sessionID = req.signedCookies.server_ssID;
       const sessionQuery = { _id: req.signedCookies.server_ssID };
-
       sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
         if (sessionErr) throw sessionErr;
         if (sessionRes !== null) {
@@ -118,7 +115,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      sessionDB.updateOne({ _id: sessionID }, { $set: { userID: ress.userID } }, { upsert: true });
+      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
       res.send({ "result": "Logged in: " + ress.userID, "isLoggedIn": true });
     } else {
       res.send({ "result": "We couldn't find an account with that email address", "isLoggedIn": false });
@@ -248,15 +245,6 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   });
 });
 
-// orderDB.find({}, { projection: { _id: 0, userID: req.body.userID, firstName: 1, lastName: 1,  email: 1, address: 1, city: 1, county: 1, orderType: 1, deliveryMethod: 1, deliveryFee: 1, time: 1, order: 1, collectAddress: 1, totalQuantity: 1, totalPay: 1, status: 1 } }).toArray(function(orderErr, orderRes) {
-//   if (orderErr) throw orderErr;
-//   if (orderRes.length > 0) {
-//     res.send({ "result": orderRes});
-//   } else {
-//     res.send({ "result": "Not found" });
-//   }
-// });
-
 app.post("/get-orders", urlencodedParser, async (req, res) => {
   const orderQuery = {
     userID: req.body.userID
@@ -272,11 +260,11 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
-  const sessionQuery = { _id: sessionID, userID: req.body.userID };
+  const sessionQuery = { _id: req.signedCookies.server_ssID, userID: req.body.userID };
   sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
     if (sessionErr) throw sessionErr;
     if (sessionRes !== null) {
-      console.log(req.body.userID + 'has signed out');
+      console.log(req.body.userID + ' has signed out');
       res.send({ "result": "Signed Out", "userID": sessionRes.userID });
     } else {
       res.send({ "result": "UserID not found" });
