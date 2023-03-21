@@ -37,6 +37,26 @@ app.set('trust proxy', 1);
 
 app.use(require("body-parser").json());
 
+
+app.use(session({
+  name: 'server_ssID',
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  withCredentials: true,
+  cookie: {
+    sameSite: 'none',
+    secure: true,
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24
+  },
+  domain: "https://vercelreact-taupe.vercel.app",
+  store: MongoStore.create({
+    mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
+    collectionName: "sessions"
+  })
+}));
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -86,29 +106,16 @@ app.get("/", urlencodedParser, async (req, res) => {
         }
       });
   } else {
-    app.use(session({
-      name: 'server_ssID',
-      secret: 'keyboard cat',
-      resave: false,
-      saveUninitialized: true,
-      withCredentials: true,
-      cookie: {
-        sameSite: 'none',
-        secure: true,
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24
-      },
-      domain: "https://vercelreact-taupe.vercel.app",
-      store: MongoStore.create({
-        mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
-        collectionName: "sessions"
-      })
-    }));
     res.send({ "result": "Nice to meeet you", "isLoggedIn": false });
   }
 });
 
 app.post("/login", urlencodedParser, async (req, res) => {
+  res.setHeader("Access-Control-Expose-Headers", "ETag");
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   const userQuery = { email: req.body.email, password: req.body.password };
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
@@ -258,6 +265,11 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
+  res.setHeader("Access-Control-Expose-Headers", "ETag");
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   const sessionQuery = { _id: req.signedCookies.server_ssID, userID: req.body.userID };
   sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
     if (sessionErr) throw sessionErr;
