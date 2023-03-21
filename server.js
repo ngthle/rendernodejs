@@ -103,6 +103,24 @@ app.get("/", urlencodedParser, async (req, res) => {
     });
     client.close();
   } else {
+    app.use(session({
+      name: 'server_ssID',
+      secret: 'keyboard cat',
+      resave: false,
+      saveUninitialized: true,
+      withCredentials: true,
+      cookie: {
+        sameSite: 'none',
+        secure: true,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24
+      },
+      domain: "https://vercelreact-taupe.vercel.app",
+      store: MongoStore.create({
+        mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
+        collectionName: "sessions"
+      })
+    }));
     res.send({ "result": "Nice to meeet you", "isLoggedIn": false });
   }
 });
