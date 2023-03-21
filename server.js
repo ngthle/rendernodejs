@@ -168,7 +168,6 @@ app.post("/change-details", urlencodedParser, async (req, res) => {
       res.send({ "result": "Not found.", "status": false });
     }
   });
-  client.close();
 });
 
 app.post("/change-password", urlencodedParser, async (req, res) => {
@@ -225,7 +224,7 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
 });
 
 app.post("/place-order", urlencodedParser, async (req, res) => {
-  var orderQuery = {
+  const orderQuery = {
     userID: req.body.userID,
     time: req.body.time,
     email: req.body.email,
@@ -256,11 +255,10 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
 //   } else {
 //     res.send({ "result": "Not found" });
 //   }
-//   client.close();
 // });
 
 app.post("/get-orders", urlencodedParser, async (req, res) => {
-  var orderQuery = {
+  const orderQuery = {
     userID: req.body.userID
   };
   orderDB.find(orderQuery).toArray(function (orderErr, orderRes) {
@@ -274,7 +272,7 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
-  var sessionQuery = { _id: sessionID, userID: req.body.userID };
+  const sessionQuery = { _id: sessionID, userID: req.body.userID };
   sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
     if (sessionErr) throw sessionErr;
     if (sessionRes !== null) {
