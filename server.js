@@ -41,7 +41,7 @@ app.use(session({
   name: 'server_ssID',
   secret: 'keyboard cat',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   withCredentials: true,
   cookie: {
     sameSite: 'none',
