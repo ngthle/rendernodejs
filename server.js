@@ -62,8 +62,8 @@ const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect((err, database) => {
   if(err) throw err;
-  const PORT = process.env.PORT || 10000;
-  app.listen(PORT, console.log(`Server started on port ${PORT}`));
+  // const PORT = process.env.PORT || 10000;
+  // app.listen(PORT, console.log(`Server started on port ${PORT}`));
 });
 
 const userDB = client.db("test").collection("users");
@@ -287,5 +287,5 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   client.close();
 });
 
-// const PORT = process.env.PORT || 10000;
-// app.listen(PORT, console.log(`Server started on port ${PORT}`));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, console.log(`Server started on port ${PORT}`));
