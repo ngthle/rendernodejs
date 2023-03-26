@@ -57,13 +57,14 @@ app.use(session({
   })
 }));
 
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, console.log(`Server started on port ${PORT}`));
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect((err, database) => {
   if(err) throw err;
-  const PORT = process.env.PORT || 10000;
-  app.listen(PORT, console.log(`Server started on port ${PORT}`));
 });
 
 const userDB = client.db("test").collection("users");
@@ -116,14 +117,18 @@ app.post("/login", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  const userQuery = { email: req.body.email, password: req.body.password };
+  const userQuery = { email: req.body.email };
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
-      res.send({ "result": "Logged in: " + ress.userID, "isLoggedIn": true });
+      if (req.body.password === ress.password) {
+        sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
+        res.send({ "result": "Login successful."});
+      } else {
+        res.send({ "result": "The password you entered is incorrect. Please try again."});
+      }
     } else {
-      res.send({ "result": "We couldn't find an account with that email address", "isLoggedIn": false });
+      res.send({ "result": "We couldn't find an account with that email address."});
     }
   });
 });
@@ -238,7 +243,7 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
     orderType: req.body.orderType,
     deliveryMethod: req.body.deliveryMethod,
     deliveryFee: req.body.deliveryFee,
-    collectAddress: req.body.collectAddress,
+    shopAddress: req.body.shopAddress,
     order: req.body.order,
     totalQuantity: req.body.totalQuantity,
     totalPay: req.body.totalPay,
@@ -280,6 +285,7 @@ app.post("/signout", urlencodedParser, async (req, res) => {
       res.send({ "result": "UserID not found" });
     }
   });
+  client.close();
 });
 
 // const PORT = process.env.PORT || 10000;
