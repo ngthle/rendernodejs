@@ -57,14 +57,13 @@ app.use(session({
   })
 }));
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, console.log(`Server started on port ${PORT}`));
-
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect((err, database) => {
   if(err) throw err;
+  const PORT = process.env.PORT || 10000;
+  app.listen(PORT, console.log(`Server started on port ${PORT}`));
 });
 
 const userDB = client.db("test").collection("users");
@@ -123,12 +122,12 @@ app.post("/login", urlencodedParser, async (req, res) => {
     if (ress !== null) {
       if (req.body.password === ress.password) {
         sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
-        res.send({ "result": "Login successful."});
+        res.send({"result": true, "message": "Login successful."});
       } else {
-        res.send({ "result": "The password you entered is incorrect. Please try again."});
+        res.send({"result": false, "message": "The password you entered is incorrect. Please try again."});
       }
     } else {
-      res.send({ "result": "We couldn't find an account with that email address."});
+      res.send({"result": false, "message": "We couldn't find an account with that email address."});
     }
   });
 });
