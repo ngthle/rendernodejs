@@ -4,7 +4,6 @@ const cors = require('cors');
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
-// let sessionID;
 let userIDServer;
 
 const cookieParser = require('cookie-parser');
@@ -78,7 +77,6 @@ app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   if (req.signedCookies.server_ssID) {
     console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
-    // sessionID = req.signedCookies.server_ssID;
       const sessionQuery = { _id: req.signedCookies.server_ssID };
       sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
         if (sessionErr) throw sessionErr;
@@ -284,8 +282,5 @@ app.post("/signout", urlencodedParser, async (req, res) => {
       res.send({ "result": "UserID not found" });
     }
   });
-  // client.close();
+  client.close();
 });
-
-// const PORT = process.env.PORT || 10000;
-// app.listen(PORT, console.log(`Server started on port ${PORT}`));
