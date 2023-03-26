@@ -272,15 +272,18 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  const sessionQuery = { _id: req.signedCookies.server_ssID, userID: req.body.userID };
-  sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
-    if (sessionErr) throw sessionErr;
-    if (sessionRes !== null) {
-      console.log(req.body.userID + ' has signed out');
-      res.send({ "result": "Signed Out", "userID": sessionRes.userID });
-    } else {
-      res.send({ "result": "UserID not found" });
-    }
-  });
-  client.close();
+  // const sessionQuery = { _id: req.signedCookies.server_ssID, userID: req.body.userID };
+  // sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
+  //   if (sessionErr) throw sessionErr;
+  //   if (sessionRes !== null) {
+  //     console.log(req.body.userID + ' has signed out');
+  //     res.send({ "result": "Signed Out", "userID": sessionRes.userID });
+  //   } else {
+  //     res.send({ "result": "UserID not found" });
+  //   }
+  // });
+  console.log(req.body.userID + ' has signed out');
+  req.session.destroy(function(err) {
+    // cannot access session here
+  })
 });
