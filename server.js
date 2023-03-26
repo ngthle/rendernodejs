@@ -284,7 +284,7 @@ app.post("/signout", urlencodedParser, async (req, res) => {
   //   }
   // });
 
-  sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $unset: "userID" }, { upsert: true });
+  sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $unset: {userID: ""} }, { upsert: true });
   console.log(req.body.userID + ' has signed out');
   res.send({ "result": "Signed Out"});
 
