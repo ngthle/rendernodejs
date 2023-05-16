@@ -217,7 +217,7 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
   }
 
   let userID;
-  if (req.body.userID === null) {
+  if (req.body.userID === 0) {
     const sessionQuery = { _id: req.signedCookies.server_ssID };
     sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
@@ -288,7 +288,7 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
   // })});
 
 // ------------------------------------------------------------------------------
-if (req.body.userID === null) {
+if (req.body.userID === 0) {
   const guestID = req.signedCookies.server_ssID;
   const productID = Number(req.body.productID);
   const productQuantity = Number(req.body.productQuantity);
