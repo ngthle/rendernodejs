@@ -68,6 +68,384 @@ client.connect((err, database) => {
 const userDB = client.db("test").collection("users");
 const sessionDB = client.db("test").collection("sessions");
 const orderDB = client.db("test").collection("orders");
+const bookDB = client.db("test").collection("books");
+const authorDB = client.db("test").collection("authors");
+const basketDB = client.db("test").collection("baskets");
+
+// const data = JSON.parse(fs.readFileSync('./add.js', 'utf-8'));
+// //array
+// bookDB.insertMany(data, function(err, res) {
+//     if (err) throw err;
+//     console.log("Number of documents inserted: " + res.insertedCount);
+// });
+
+// const data = JSON.parse(fs.readFileSync('./add.js', 'utf-8'));
+// //object
+// authorDB.insertOne(data, function(err, res) {
+//     if (err) throw err;
+//     console.log("The document has been inserted");
+// });
+
+// var mySort = { published: -1 };
+// var myQuery1 = {publisherID: 3155};
+//   bookDB.find().sort(mySort).toArray(function(err, result) {
+//     if (err) throw err;
+//     console.log(result);
+//   });
+
+
+//once and forever
+// bookDB.dropIndexes();
+//
+// bookDB.createIndex({ name: 'text', author: 'text' }, {default_language: "none", language_override: "none"});
+
+app.post("/search", urlencodedParser, async (req, res) => {
+  let authorID = {$exists: true};
+  if (req.body.authorID !== undefined) {
+    authorID = Number(req.body.authorID);
+  }
+  // const searchQuery = { $text: { $search: req.body.keyword }};
+  const projection = { ISBN: 1, name: 1};
+  const loadQuantity = req.body.loadQuantity;
+
+  // bookDB.find(searchQuery).project(projection).toArray(function(err, result) {
+  if (req.body.searchParams !== undefined) {
+    console.log(req.body.searchParams);
+  }
+  const searchParams = JSON.parse(JSON.stringify(req.body.searchParams));
+  // const deepClone = req.body.searchParams;
+  // searchParams["authorID"] = Number(searchParams["author"]);
+  // searchParams["publisherID"] = Number(searchParams["publisher"]);
+  if (searchParams["author"]) {
+      searchParams["authorID"] = searchParams["author"];
+      delete searchParams["author"];
+  }
+
+  if (searchParams["publisher"]) {
+      searchParams["publisherID"] = searchParams["publisher"];
+      delete searchParams["publisher"];
+  }
+  delete searchParams["q"];
+  delete searchParams["sort"];
+
+  for (const key in searchParams) {
+    const parsed = Number(searchParams[key]);
+    if (!isNaN(parsed)) {
+      searchParams[key] = parsed;
+    }
+  }
+  const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
+  console.log(searchQuery);
+  bookDB.find(searchQuery).limit(loadQuantity).toArray(function (searchErr, searchResult) {
+    if (searchErr) throw searchErr;
+    // console.log("searchResult.length: " + searchResult.length);
+    res.send({ "result": searchResult });
+  });
+});
+
+// app.post("/product", urlencodedParser, async (req, res) => {
+//   const searchQuery = { ISBN: Number(req.body.id) };
+//   let product, author;
+//   bookDB.findOne(searchQuery, function (productErr, productResult) {
+//     if (productErr) throw productErr;
+//     console.log(productResult);
+//     if (productResult !== undefined) {
+//       authorDB.findOne({authorID: Number(productResult.authorID)}, function (authorErr, authorResult) {
+//         if (authorErr) throw authorErr;
+//         console.log(authorResult);
+//         if (authorResult !== undefined) {
+//           bookDB.find({authorID: authorResult.authorID, ISBN: { $ne: Number(req.body.id) }}).toArray(function (sameAuthorErr, sameAuthorResult) {
+//             if (sameAuthorErr) throw sameAuthorErr;
+//             res.send({ product: productResult, author: authorResult, sameAuthor: sameAuthorResult});
+//       });
+//     }
+//   });}
+// });
+// });
+
+app.post("/product", urlencodedParser, async (req, res) => {
+  const searchQuery = { ISBN: Number(req.body.id) };
+  let product, author;
+  bookDB.findOne(searchQuery, function (productErr, productResult) {
+    if (productErr) throw productErr;
+    if (productResult !== undefined) {
+      authorDB.findOne({authorID: Number(productResult.authorID)}, function (authorErr, authorResult) {
+        if (authorErr) throw authorErr;
+            res.send({ product: productResult, author: authorResult});
+      });
+    }
+  });
+});
+
+app.post("/other-works", urlencodedParser, async (req, res) => {
+  bookDB.find({ authorID: Number(req.body.authorID), ISBN: { $ne: Number(req.body.ISBN) } }).toArray(function (sameAuthorErr, sameAuthorResult) {
+    if (sameAuthorErr) throw sameAuthorErr;
+    res.send({ sameAuthor: sameAuthorResult });
+  });
+});
+
+app.post("/author-works", urlencodedParser, async (req, res) => {
+  bookDB.find({ authorID: Number(req.body.authorID) }).toArray(function (authorWorksErr, authorWorksResult) {
+    if (authorWorksErr) throw authorWorksErr;
+    res.send({ authorWorks: authorWorksResult });
+  });
+});
+
+app.post("/random-products", urlencodedParser, async (req, res) => {
+  bookDB.aggregate([
+    { $match: { authorID: { $ne: Number(req.body.authorID) } } },
+    { $sample: { size: 10 } }
+  ]).toArray(function (randomProductsErr, randomProductsResult) {
+    if (randomProductsErr) throw randomProductsErr;
+    // console.log(randomProductsResult);
+    res.send({ randomProducts: randomProductsResult });
+  });
+});
+
+app.post("/basket-list", urlencodedParser, async (req, res) => {
+  function sortByTime(product1, product2) {
+    if (product1.time < product2.time) {return 1;}
+    if (product1.time > product2.time) {return -1;}
+    return 0;
+  }
+
+  let userID;
+  if (req.body.userID === null) {
+    const sessionQuery = { _id: req.signedCookies.server_ssID };
+    sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
+      if (sessionErr) throw sessionErr;
+      if (!sessionRes.basket) {
+        // basketDB.insertOne({ userID: Number(req.body.userID), basket: []});
+        // res.send({basketListResult: []});
+        sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { basket: [] } }, { upsert: true });
+        res.send({basketListResult: []});
+      } else {
+        res.send({basketListResult: sessionRes.basket.sort(sortByTime)});
+      }
+    });
+  } else {
+    basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
+      var sortBy = { time: 1 };
+      if (basketListErr) throw basketListErr;
+      if (!basketListResult) {
+        basketDB.insertOne({ userID: Number(req.body.userID), basket: []});
+        res.send({basketListResult: []});
+      } else {
+        // if ((req.body.sort === "update")||(req.body.sort === "newload")) {
+        //   res.send({basketListResult: basketListResult.basket.sort(sortByTime)});
+        // } else {
+        //   res.send({basketListResult: basketListResult.basket});
+        // }
+          res.send({basketListResult: basketListResult.basket.sort(sortByTime)});
+      }
+    })
+}
+});
+
+app.post("/basket-items-data", urlencodedParser, async (req, res) => {
+  bookDB.find({ISBN : { "$in" : req.body.basketItems}}).toArray(function (basketItemsErr, basketItemsResult) {
+    if (basketItemsErr) throw basketItemsErr;
+    // console.log(basketItemsResult);
+    res.send({ basketItemsResult: basketItemsResult });
+  });
+});
+
+app.post("/send-basket", urlencodedParser, async (req, res) => {
+  basketDB.findOne({userID: req.body.userID}, function (basketListErr, basketListResult) {
+    if (basketListErr) throw basketListErr;
+      basketDB.updateOne({ userID: req.body.userID }, { $set: {basket: req.body.basketData} }, { upsert: true });
+      res.send({"result": "Updated"});
+  })});
+
+app.post("/update-basket", urlencodedParser, async (req, res) => {
+  // basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
+  //   if (basketListErr) throw basketListErr;
+  //   console.log(basketListResult);
+  //   if (Number(req.body.productQuantity) !== 0) {
+  //     // if (basketListResult.basket.length === 0) {
+  //     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}}, {upsert: true});
+  //     //   res.send({"result": "pushed 0"});
+  //     // } else {
+  //     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID}}}, {upsert: true});
+  //     //   // basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}});
+  //     //   res.send({"result": "pushed"});
+  //     // }
+  //
+  //      const query = { userID : Number(req.body.userID)};
+  //       basketDB.updateOne(query, { $push: {basket: {$each: [{"productID": Number(req.body.productID), "productQuantity": Number(req.body.productQuantity)}]}}}, {upsert: true});
+  //       res.send({"result": "setted"});
+  //   } else {
+  //     basketDB.updateOne({ userID: Number(req.body.userID) }, { $pull: {basket: {productID: req.body.productID}}});
+  //     res.send({"result": "pulled"});
+  //   }
+  // })});
+
+// ------------------------------------------------------------------------------
+if (req.body.userID === null) {
+  const guestID = req.signedCookies.server_ssID;
+  const productID = Number(req.body.productID);
+  const productQuantity = Number(req.body.productQuantity);
+  const find = await sessionDB.find({_id: guestID, basket: {$elemMatch: {productID: productID}}}).toArray();
+  const d = new Date();
+  const time = d.getTime();
+  let modifiedCount;
+  if (productQuantity !== 0) {
+    if (find.length === 0) {
+      const update = await sessionDB.updateOne({_id: guestID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
+      modifiedCount = update.modifiedCount;
+    } else {
+      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
+      // if (removeItem.modifiedCount !== 0) {
+      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
+      // }
+      const query = { _id: guestID, "basket.productID": productID };
+      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
+      const update = await sessionDB.updateOne(query, updateDocument);
+      modifiedCount = update.modifiedCount;
+    }
+  } else {
+    if (find.length !== 0) {
+      const update = await sessionDB.updateOne({_id: guestID}, { $pull: {basket: {productID: productID}}});
+      modifiedCount = update.modifiedCount;
+    }
+  }
+  if (modifiedCount === 1) {
+    res.send({"result": "Updated"});
+  } else {
+    res.send({"result": "Error"});
+  }
+} else {
+  const userID = Number(req.body.userID);
+  const productID = Number(req.body.productID);
+  const productQuantity = Number(req.body.productQuantity);
+  const find = await basketDB.find({userID: userID, basket: {$elemMatch: {productID: productID}}}).toArray();
+  const d = new Date();
+  const time = d.getTime();
+  let modifiedCount;
+  if (productQuantity !== 0) {
+    if (find.length === 0) {
+      const update = await basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
+      modifiedCount = update.modifiedCount;
+    } else {
+      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
+      // if (removeItem.modifiedCount !== 0) {
+      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
+      // }
+      const query = { userID: userID, "basket.productID": productID };
+      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
+      const update = await basketDB.updateOne(query, updateDocument);
+      modifiedCount = update.modifiedCount;
+    }
+  } else {
+    if (find.length !== 0) {
+      const update = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
+      modifiedCount = update.modifiedCount;
+    }
+  }
+  if (modifiedCount === 1) {
+    res.send({"result": "Updated"});
+  } else {
+    res.send({"result": "Error"});
+  }
+}
+
+});
+
+// basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
+//   if (basketListErr) throw basketListErr;
+//   console.log(basketListResult);
+//   if (Number(req.body.productQuantity) !== 0) {
+//     // if (basketListResult.basket.length === 0) {
+//     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}}, {upsert: true});
+//     //   res.send({"result": "pushed 0"});
+//     // } else {
+//     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID}}}, {upsert: true});
+//     //   // basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}});
+//     //   res.send({"result": "pushed"});
+//     // }
+//
+//      const query = { userID : Number(req.body.userID)};
+//       basketDB.updateOne(query, { $push: {basket: {$each: [{"productID": Number(req.body.productID), "productQuantity": Number(req.body.productQuantity)}]}}}, {upsert: true});
+//       res.send({"result": "setted"});
+//   } else {
+//     basketDB.updateOne({ userID: Number(req.body.userID) }, { $pull: {basket: {productID: req.body.productID}}});
+//     res.send({"result": "pulled"});
+//   }
+// })});
+
+// ------------------------------------------------------------------------------
+
+  // const query = { userID : req.body.userID, "basket.productID": req.body.productID};
+  // let updateDocument;
+  // if (req.body.productQuantity === 0) {
+  //   updateDocument = {
+  //     $pull: { basket: { productID: req.body.productID } }
+  //   };
+  // } else {
+  //   updateDocument = {
+  //     $set: { "basket.$.productQuantity": req.body.productQuantity }
+  //   };
+  // }
+  // const result = await basketDB.updateOne(query, updateDocument);
+  // res.send({"result": "Updated", "awaitResult" : result});
+// });
+
+// app.post("/basket-items-data", urlencodedParser, async (req, res) => {
+//   const userQuery = { userID: req.body.userID };
+//   userDB.findOne(userQuery, function (err, ress) {
+//     if (err) throw err;
+//     if (ress !== null) {
+//       userDB.updateOne({ userID: req.body.userID },
+//         {
+//           $set: {
+//             basketData: req.body.basketData
+//           }
+//         }, { upsert: true });
+//       res.send({ "result": "BasketData has been updated.", "status": true });
+//     } else {
+//       res.send({ "result": "Not found.", "status": false });
+//     }
+//   });
+// });
+
+app.post("/g-update-basket", urlencodedParser, async (req, res) => {
+  if (req.signedCookies.server_ssID) {
+      const sessionQuery = { _id: req.signedCookies.server_ssID };
+      sessionDB.updateOne({ sessionQuery }, { $set: { userID: ress.userID } }, { upsert: true });
+  }
+  const sessionID =req.signedCookies.server_ssID;
+  const productID = Number(req.body.productID);
+  const productQuantity = Number(req.body.productQuantity);
+  const find = await sessionDB.find({_id: sessionID, basket: {$elemMatch: {productID: productID}}}).toArray();
+  const d = new Date();
+  const time = d.getTime();
+  let modifiedCount;
+  if (productQuantity !== 0) {
+    if (find.length === 0) {
+      const update = await basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
+      modifiedCount = update.modifiedCount;
+    } else {
+      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
+      // if (removeItem.modifiedCount !== 0) {
+      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
+      // }
+      const query = { userID: userID, "basket.productID": productID };
+      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
+      const update = await basketDB.updateOne(query, updateDocument);
+      modifiedCount = update.modifiedCount;
+    }
+  } else {
+    if (find.length !== 0) {
+      const update = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
+      modifiedCount = update.modifiedCount;
+    }
+  }
+  if (modifiedCount === 1) {
+    res.send({"result": "Updated"});
+  } else {
+    res.send({"result": "Error"});
+  }
+});
 
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
@@ -97,14 +475,25 @@ app.get("/", urlencodedParser, async (req, res) => {
               });
             });
           } else {
-            res.send({ "result": "Hi good old " + sessionRes.session, "isLoggedIn": false });
+            res.send({
+              // "result": "Hi good old " + sessionRes.session,
+              "result": "Old Guest",
+              "isLoggedIn": false,
+              "userID" : null,
+              "basketListResult": sessionRes.basket
+            });
           }
         } else {
           res.send({ "result": "Your session has ended", "isLoggedIn": false });
         }
       });
   } else {
-    res.send({ "result": "Nice to meeet you", "isLoggedIn": false });
+    res.send({
+      "result": "New Guest",
+      "isLoggedIn": false,
+      "userID" : null,
+      "basketListResult": []
+     });
   }
 });
 
@@ -243,13 +632,27 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
     shopAddress: req.body.shopAddress,
     order: req.body.order,
     totalQuantity: req.body.totalQuantity,
+    subTotal: req.body.subTotal,
     totalPay: req.body.totalPay,
     status: "Delivered"
   };
-  orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
+
+  const insertOrder = await orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
     if (orderErr) throw orderErr;
-    res.send({ "result": orderRes.acknowledged });
+    return (orderRes.acknowledged).toString();
   });
+
+  // const order = req.body.order;
+  //
+  // for (let i = 0; i < order.length; i++) {
+  //   const updateQuantity = await bookDB.updateOne(
+  //      { ISBN: order[i].ISBN, $inc: { quantity: -Number(order[i].productQuantity) } }, function (qErr, qRes) {
+  //        if (orderErr) throw orderErr;
+  //      }
+  // );
+  // }
+
+  res.send({ "result": insertOrder, "hehe": "hihi" });
 });
 
 app.post("/get-orders", urlencodedParser, async (req, res) => {
