@@ -184,6 +184,13 @@ app.post("/other-works", urlencodedParser, async (req, res) => {
   });
 });
 
+app.post("/author-info", urlencodedParser, async (req, res) => {
+  authorDB.findOne({ authorID: Number(req.body.authorID) }, function (authorInfoErr, authorInfoResult) {
+    if (authorInfoErr) throw authorInfoErr;
+    res.send({ author: authorInfoResult });
+  });
+});
+
 app.post("/author-works", urlencodedParser, async (req, res) => {
   bookDB.find({ authorID: Number(req.body.authorID) }).toArray(function (authorWorksErr, authorWorksResult) {
     if (authorWorksErr) throw authorWorksErr;
