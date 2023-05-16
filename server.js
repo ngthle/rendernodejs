@@ -288,7 +288,7 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
   // })});
 
 // ------------------------------------------------------------------------------
-if (req.body.userID === 0) {
+if (req.body.userID === null) {
   const guestID = req.signedCookies.server_ssID;
   const productID = Number(req.body.productID);
   const productQuantity = Number(req.body.productQuantity);
