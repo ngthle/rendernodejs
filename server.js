@@ -217,7 +217,7 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
   }
 
   let userID;
-  if (req.body.userID === 0) {
+  if (req.body.userID === null) {
     const sessionQuery = { _id: req.signedCookies.server_ssID };
     sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
