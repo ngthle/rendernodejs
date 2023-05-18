@@ -547,6 +547,12 @@ app.post("/login", urlencodedParser, async (req, res) => {
             if (sessionErr) throw sessionErr;
             if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
               responeObject["sessionBasketEdit"] = false;
+              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+                if (loginRes.modifiedCount === 1) {
+                  responeObject["message"] = "Login successful.";
+                  res.send(responeObject);
+                }
+              });
             } else {
               responeObject["sessionBasketEdit"] = true;
               let modifiedCount = 0;
@@ -560,13 +566,12 @@ app.post("/login", urlencodedParser, async (req, res) => {
                   sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
                 }
               });
-            }
-          });
-
-          sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
-            if (loginRes.modifiedCount === 1) {
-              responeObject["message"] = "Login successful.";
-              res.send(responeObject);
+              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+                if (loginRes.modifiedCount === 1) {
+                  responeObject["message"] = "Login successful.";
+                  res.send(responeObject);
+                }
+              });
             }
           });
         // res.send({"result": true, "message": "Login successful."});
