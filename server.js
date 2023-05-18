@@ -504,7 +504,7 @@ app.get("/", urlencodedParser, async (req, res) => {
   }
 });
 
-app.post("/login", urlencodedParser, async (req, res) => {
+app.post("/login-old", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
@@ -517,6 +517,59 @@ app.post("/login", urlencodedParser, async (req, res) => {
       if (req.body.password === ress.password) {
         sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
         res.send({"result": true, "message": "Login successful."});
+      } else {
+        res.send({"result": false, "message": "The password you entered is incorrect. Please try again."});
+      }
+    } else {
+      res.send({"result": false, "message": "We couldn't find an account with that email address."});
+    }
+  });
+});
+
+app.post("/login", urlencodedParser, async (req, res) => {
+  res.setHeader("Access-Control-Expose-Headers", "ETag");
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+
+  const userQuery = { email: req.body.email };
+  const sessionQuery = { _id: req.signedCookies.server_ssID };
+
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      if (req.body.password === ress.password) {
+
+        const responeObject = {};
+
+          sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
+            if (sessionErr) throw sessionErr;
+            if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
+              responeObject["sessionBasketEdit"] = false;
+            } else {
+              responeObject["sessionBasketEdit"] = true;
+              let modifiedCount = 0;
+              let l = sessionRes.basket.length;
+              sessionRes.basket.map((item, idx, arr) => {
+                const d = new Date();
+                const time = d.getTime();
+                basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+                modifiedCount ++;
+                if (modifiedCount === l) {
+                  sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
+                }
+              });
+            }
+          });
+
+          sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+            if (loginRes.modifiedCount === 1) {
+              responeObject["message"] = "Login successful.";
+              res.send(responeObject);
+            }
+          });
+        // res.send({"result": true, "message": "Login successful."});
       } else {
         res.send({"result": false, "message": "The password you entered is incorrect. Please try again."});
       }
@@ -644,10 +697,13 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
     status: "Delivered"
   };
 
-  const insertOrder = await orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
-    if (orderErr) throw orderErr;
-    return (orderRes.acknowledged).toString();
-  });
+  // const insertOrder = await orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
+  //   if (orderErr) throw orderErr;
+  //   return (orderRes.acknowledged).toString();
+  // });
+
+  const x = await orderDB.insertOne(orderQuery).then(myRes => {return myRes.acknowledged});
+  res.send({"result" : x});
 
   // const order = req.body.order;
   //
