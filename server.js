@@ -231,11 +231,11 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
       }
     });
   } else {
-    basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
+    basketDB.findOne({userID: req.body.userID}, function (basketListErr, basketListResult) {
       var sortBy = { time: 1 };
       if (basketListErr) throw basketListErr;
       if (!basketListResult) {
-        basketDB.insertOne({ userID: Number(req.body.userID), basket: []});
+        basketDB.insertOne({ userID: req.body.userID, basket: []});
         res.send({basketListResult: []});
       } else {
         // if ((req.body.sort === "update")||(req.body.sort === "newload")) {
@@ -322,7 +322,7 @@ if (req.body.userID === null) {
     res.send({"result": "Error"});
   }
 } else {
-  const userID = Number(req.body.userID);
+  const userID = req.body.userID;
   const productID = Number(req.body.productID);
   const productQuantity = Number(req.body.productQuantity);
   const find = await basketDB.find({userID: userID, basket: {$elemMatch: {productID: productID}}}).toArray();
@@ -540,7 +540,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
     if (err) throw err;
     if (ress !== null) {
 
-      const userID = Number(ress.userID);
+      const userID = ress.userID;
       if (req.body.password === ress.password) {
 
         const responeObject = {};
