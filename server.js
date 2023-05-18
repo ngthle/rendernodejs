@@ -554,7 +554,6 @@ app.post("/login", urlencodedParser, async (req, res) => {
                 }
               });
             } else {
-              responeObject["sessionBasketEdit"] = true;
               let modifiedCount = 0;
               let l = sessionRes.basket.length;
               sessionRes.basket.map((item, idx, arr) => {
@@ -563,13 +562,17 @@ app.post("/login", urlencodedParser, async (req, res) => {
                 basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
                 modifiedCount ++;
                 if (modifiedCount === l) {
-                  sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
-                }
-              });
-              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
-                if (loginRes.modifiedCount === 1) {
-                  responeObject["message"] = "Login successful.";
-                  res.send(responeObject);
+                  responeObject["sessionBasketEdit"] = true;
+                  sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true }).then(clearBasketRes => {
+                    if (clearBasketRes.modifiedCount === 1) {
+                      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+                        if (loginRes.modifiedCount === 1) {
+                          responeObject["message"] = "Login successful.";
+                          res.send(responeObject);
+                        }
+                      });
+                    }
+                  });
                 }
               });
             }
