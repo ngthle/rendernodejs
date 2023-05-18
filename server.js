@@ -539,6 +539,8 @@ app.post("/login", urlencodedParser, async (req, res) => {
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
+
+      const userID = Number(ress.userID);
       if (req.body.password === ress.password) {
 
         const responeObject = {};
@@ -547,7 +549,7 @@ app.post("/login", urlencodedParser, async (req, res) => {
             if (sessionErr) throw sessionErr;
             if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
               responeObject["sessionBasketEdit"] = false;
-              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userID } }, { upsert: true }).then(loginRes => {
                 if (loginRes.modifiedCount === 1) {
                   responeObject["message"] = "Login successful.";
                   res.send(responeObject);
@@ -559,13 +561,13 @@ app.post("/login", urlencodedParser, async (req, res) => {
               sessionRes.basket.map((item, idx, arr) => {
                 const d = new Date();
                 const time = d.getTime();
-                basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+                basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
                 modifiedCount ++;
                 if (modifiedCount === l) {
                   responeObject["sessionBasketEdit"] = true;
                   sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true }).then(clearBasketRes => {
                     if (clearBasketRes.modifiedCount === 1) {
-                      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+                      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userID } }, { upsert: true }).then(loginRes => {
                         if (loginRes.modifiedCount === 1) {
                           responeObject["message"] = "Login successful.";
                           res.send(responeObject);
