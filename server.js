@@ -539,8 +539,6 @@ app.post("/login", urlencodedParser, async (req, res) => {
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
-
-      const userID = ress.userID;
       if (req.body.password === ress.password) {
 
         const responeObject = {};
@@ -549,37 +547,35 @@ app.post("/login", urlencodedParser, async (req, res) => {
             if (sessionErr) throw sessionErr;
             if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
               responeObject["sessionBasketEdit"] = false;
-              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userID } }, { upsert: true }).then(loginRes => {
+              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
                 if (loginRes.modifiedCount === 1) {
+                  responeObject["result"] = true;
                   responeObject["message"] = "Login successful.";
                   res.send(responeObject);
                 }
               });
             } else {
+              responeObject["sessionBasketEdit"] = true;
               let modifiedCount = 0;
               let l = sessionRes.basket.length;
               sessionRes.basket.map((item, idx, arr) => {
                 const d = new Date();
                 const time = d.getTime();
-                basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+                basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
                 modifiedCount ++;
                 if (modifiedCount === l) {
-                  responeObject["sessionBasketEdit"] = true;
-                  sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true }).then(clearBasketRes => {
-                    if (clearBasketRes.modifiedCount === 1) {
-                      sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userID } }, { upsert: true }).then(loginRes => {
-                        if (loginRes.modifiedCount === 1) {
-                          responeObject["message"] = "Login successful.";
-                          res.send(responeObject);
-                        }
-                      });
-                    }
-                  });
+                  sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
+                }
+              });
+              sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true }).then(loginRes => {
+                if (loginRes.modifiedCount === 1) {
+                  responeObject["result"] = true;
+                  responeObject["message"] = "Login successful.";
+                  res.send(responeObject);
                 }
               });
             }
           });
-        // res.send({"result": true, "message": "Login successful."});
       } else {
         res.send({"result": false, "message": "The password you entered is incorrect. Please try again."});
       }
@@ -687,9 +683,11 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
 });
 
 app.post("/place-order", urlencodedParser, async (req, res) => {
+  const d = new Date();
+  const time = d.getTime();
   const orderQuery = {
     userID: req.body.userID,
-    time: req.body.time,
+    time: time,
     email: req.body.email,
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -713,7 +711,17 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   // });
 
   const x = await orderDB.insertOne(orderQuery).then(myRes => {return myRes.acknowledged});
-  res.send({"result" : x});
+
+  if ((req.body.userID !== null)&&(x === true)) {
+    basketDB.updateOne({ userID: req.body.userID }, { $set: { basket: [] } }, { upsert: true }).then(myRess => {
+      console.log(myRess);
+      if (myRess.modifiedCount === 1) {
+        res.send({"result" : x, "orderID": time});
+      }
+    });
+  } else {
+      res.send({"result" : x, "orderID": time});
+  }
 
   // const order = req.body.order;
   //
@@ -725,7 +733,7 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   // );
   // }
 
-  res.send({ "result": insertOrder, "hehe": "hihi" });
+  // res.send({ "result": insertOrder, "hehe": "hihi" });
 });
 
 app.post("/get-orders", urlencodedParser, async (req, res) => {
@@ -739,6 +747,22 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
     } else {
       res.send({ "result": "Not found" });
     }
+  });
+});
+
+app.post("/load-order", urlencodedParser, async (req, res) => {
+  const orderQuery = {
+    time: Number(req.body.orderID)
+  };
+  orderDB.findOne(orderQuery, function (orderErr, orderRes) {
+    if (orderErr) throw orderErr;
+    console.log(orderRes);
+    // if (orderRes !== null) {
+    //   res.send({ "order": orderRes });
+    // } else {
+    //   res.send({ "order": "Not found" });
+    // }
+    res.send({ "order": orderRes });
   });
 });
 
