@@ -274,6 +274,13 @@ app.post("/search", urlencodedParser, async (req, res) => {
 // });
 // });
 
+app.post("/author-list", urlencodedParser, async (req, res) => {
+  const authorResult = await authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
+   if (authorListErr) throw authorListErr;
+   res.send({ authorData: authorListResult });
+ });
+});
+
 app.post("/product", urlencodedParser, async (req, res) => {
   const searchQuery = { ISBN: Number(req.body.id) };
   let product, author;
