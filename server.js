@@ -99,11 +99,55 @@ const basketDB = client.db("test").collection("baskets");
 //
 // bookDB.createIndex({ name: 'text', author: 'text' }, {default_language: "none", language_override: "none"});
 
+// app.post("/search", urlencodedParser, async (req, res) => {
+//   let authorID = {$exists: true};
+//   if (req.body.authorID !== undefined) {
+//     authorID = Number(req.body.authorID);
+//   }
+//   // const searchQuery = { $text: { $search: req.body.keyword }};
+//   const projection = { ISBN: 1, name: 1};
+//   const loadQuantity = req.body.loadQuantity;
+
+//   // bookDB.find(searchQuery).project(projection).toArray(function(err, result) {
+//   if (req.body.searchParams !== undefined) {
+//     console.log(req.body.searchParams);
+//   }
+//   const searchParams = JSON.parse(JSON.stringify(req.body.searchParams));
+//   // const deepClone = req.body.searchParams;
+//   // searchParams["authorID"] = Number(searchParams["author"]);
+//   // searchParams["publisherID"] = Number(searchParams["publisher"]);
+//   if (searchParams["author"]) {
+//       searchParams["authorID"] = searchParams["author"];
+//       delete searchParams["author"];
+//   }
+
+//   if (searchParams["publisher"]) {
+//       searchParams["publisherID"] = searchParams["publisher"];
+//       delete searchParams["publisher"];
+//   }
+//   delete searchParams["q"];
+//   delete searchParams["sort"];
+
+//   for (const key in searchParams) {
+//     const parsed = Number(searchParams[key]);
+//     if (!isNaN(parsed)) {
+//       searchParams[key] = parsed;
+//     }
+//   }
+//   const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
+//   console.log(searchQuery);
+//   bookDB.find(searchQuery).limit(loadQuantity).toArray(function (searchErr, searchResult) {
+//     if (searchErr) throw searchErr;
+//     // console.log("searchResult.length: " + searchResult.length);
+//     res.send({ "result": searchResult });
+//   });
+// });
+
 app.post("/search", urlencodedParser, async (req, res) => {
   let authorID = {$exists: true};
-  if (req.body.authorID !== undefined) {
-    authorID = Number(req.body.authorID);
-  }
+  // if (req.body.searchParams.author !== undefined) {
+  //   authorID = Number(req.body.authorID);
+  // }
   // const searchQuery = { $text: { $search: req.body.keyword }};
   const projection = { ISBN: 1, name: 1};
   const loadQuantity = req.body.loadQuantity;
@@ -116,14 +160,34 @@ app.post("/search", urlencodedParser, async (req, res) => {
   // const deepClone = req.body.searchParams;
   // searchParams["authorID"] = Number(searchParams["author"]);
   // searchParams["publisherID"] = Number(searchParams["publisher"]);
+  const filterData = {}
+  const filterArr = []
   if (searchParams["author"]) {
-      searchParams["authorID"] = searchParams["author"];
+    console.log("searchParams: " + searchParams["author"]);
+      // searchParams["authorID"] = searchParams["author"];
+      const authorParams = "50410, 28313";
+      const authorArr = searchParams["author"].split(",");
+      authorArr.map((id, idx, arr) => {
+        // filterArr.push({authorID: Number(id)});
+        filterArr.push(Number(id));
+      });
       delete searchParams["author"];
+      // const authorInfo = await authorDB.findOne({authorID: Number(searchParams.authorID)});
+      const authorInfo = await authorDB.find({authorID: {$in: filterArr} }).toArray();
+      if (authorInfo !== null) {
+        filterData.author = authorInfo;
+      }
+  } else {
+    filterData.author = [];
   }
 
   if (searchParams["publisher"]) {
       searchParams["publisherID"] = searchParams["publisher"];
       delete searchParams["publisher"];
+      // const publisherInfo = await publisherDB.findOne({publisherID: Number(searchParams.publisherID)});
+      // if (publisherInfo !== null) {
+      //   filterData.publisher = publisherInfo;
+      // }
   }
   delete searchParams["q"];
   delete searchParams["sort"];
@@ -134,13 +198,60 @@ app.post("/search", urlencodedParser, async (req, res) => {
       searchParams[key] = parsed;
     }
   }
-  const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
+
+  // const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
+  // const searchQuery = { $text: { $search: req.body.keyword }, $or: filterArr };
+  let searchQuery;
+  if ((req.body.searchParams.author !== undefined)&&
+(req.body.searchParams.author !== null)&&
+(req.body.searchParams.author !== "")) {
+    searchQuery = { $text: { $search: req.body.keyword }, authorID: {$in: filterArr} };
+  } else {
+    searchQuery = { $text: { $search: req.body.keyword } };
+  }
+  const searchQueryForFilter = { $text: { $search: req.body.keyword }};
+  const filterProjection = { authorID: 1, publisherID: 1};
+  const resultProjection = { _id: 0};
   console.log(searchQuery);
-  bookDB.find(searchQuery).limit(loadQuantity).toArray(function (searchErr, searchResult) {
-    if (searchErr) throw searchErr;
-    // console.log("searchResult.length: " + searchResult.length);
-    res.send({ "result": searchResult });
+  const responseData = {};
+
+  const getDataSet = await bookDB.find(searchQueryForFilter).project(filterProjection).limit(loadQuantity).toArray();
+
+  const getFilterData = (getDataSet) => {
+    const authorSet = new Set();
+    const publisherSet = new Set();
+    getDataSet.map(item => {
+      authorSet.add(Number(item.authorID));
+      publisherSet.add(Number(item.publisherID));
+    });
+    x = Array.from(authorSet);
+    y = Array.from(publisherSet);
+    return {"authorSet" : x, "publisherSet": y};
+  }
+
+  const authorSet = await getFilterData(getDataSet).authorSet;
+  const publisherSet = await getFilterData(getDataSet).publisherSet;
+
+  const authorResult = await authorDB.find({authorID: {$in: authorSet} }).toArray();
+  //
+  // const publisherSet = await bookDB.find(searchQueryForFilter).project(filterProjection).limit(loadQuantity).toArray(function(err, result) {
+  //   const publisherSet = new Set();
+  //   result.map(item => {
+  //     publisherSet.add(item.authorID);
+  //   })
+  //   return Array.from(publisherSet);
+  // });
+  //
+  const bookResult = await bookDB.find(searchQuery).project(resultProjection).limit(loadQuantity).toArray();
+  //
+  res.send({
+    "result": bookResult,
+    "authorData" : authorResult,
+    "authorSet" : authorSet,
+    "publisherSet" : publisherSet,
+    "filterData": filterData
   });
+
 });
 
 // app.post("/product", urlencodedParser, async (req, res) => {
