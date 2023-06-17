@@ -12,12 +12,12 @@ const MongoStore = require('connect-mongo');
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
-  res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   next();
   app.options('/', (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+    res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
     res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.send();
@@ -25,7 +25,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(cors({
-  origin: 'https://vercelreact-taupe.vercel.app',
+  origin: 'https://waterstones.vercel.app',
   methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
   credentials: true
 }));
@@ -49,7 +49,7 @@ app.use(session({
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24
   },
-  domain: "https://vercelreact-taupe.vercel.app",
+  domain: "https://waterstones.vercel.app",
   store: MongoStore.create({
     mongoUrl: "mongodb+srv://nefyisekki:sPBb2wHhT1zJfoPo@cluster0.3h7zifw.mongodb.net/?retryWrites=true&w=majority",
     collectionName: "sessions"
@@ -575,7 +575,7 @@ app.post("/g-update-basket", urlencodedParser, async (req, res) => {
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   if (req.signedCookies.server_ssID) {
@@ -625,7 +625,7 @@ app.get("/", urlencodedParser, async (req, res) => {
 app.post("/login-old", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   const userQuery = { email: req.body.email };
@@ -647,7 +647,7 @@ app.post("/login-old", urlencodedParser, async (req, res) => {
 app.post("/login", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
@@ -887,7 +887,7 @@ app.post("/load-order", urlencodedParser, async (req, res) => {
 app.post("/signout", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://vercelreact-taupe.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
