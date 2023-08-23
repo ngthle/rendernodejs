@@ -71,6 +71,7 @@ const orderDB = client.db("test").collection("orders");
 const bookDB = client.db("test").collection("books");
 const authorDB = client.db("test").collection("authors");
 const basketDB = client.db("test").collection("baskets");
+const publisherDB = client.db("test").collection("publishers");
 
 // const data = JSON.parse(fs.readFileSync('./add.js', 'utf-8'));
 // //array
@@ -143,6 +144,8 @@ const basketDB = client.db("test").collection("baskets");
 //   });
 // });
 
+
+// Updated
 app.post("/search", urlencodedParser, async (req, res) => {
   let authorID = {$exists: true};
   // if (req.body.searchParams.author !== undefined) {
@@ -160,20 +163,34 @@ app.post("/search", urlencodedParser, async (req, res) => {
   // const deepClone = req.body.searchParams;
   // searchParams["authorID"] = Number(searchParams["author"]);
   // searchParams["publisherID"] = Number(searchParams["publisher"]);
-  const filterData = {}
-  const filterArr = []
+
+  let searchQuery = {$text: { $search: req.body.keyword }};
+
+  const checkParamValid = (param) => {
+    if ((param !== undefined)&&(param !== null)&&(param !== "")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  const filterData = {};
+  const filterArr = [];
   if (searchParams["author"]) {
+    const filterAuthorArr = [];
     console.log("searchParams: " + searchParams["author"]);
       // searchParams["authorID"] = searchParams["author"];
       const authorParams = "50410, 28313";
       const authorArr = searchParams["author"].split(",");
       authorArr.map((id, idx, arr) => {
-        // filterArr.push({authorID: Number(id)});
-        filterArr.push(Number(id));
+        // filterAuthorArr.push({authorID: Number(id)});
+        filterAuthorArr.push(Number(id));
       });
+      if (checkParamValid(req.body.searchParams.author)) {
+        searchQuery.authorID =  {$in: filterAuthorArr} };
       delete searchParams["author"];
       // const authorInfo = await authorDB.findOne({authorID: Number(searchParams.authorID)});
-      const authorInfo = await authorDB.find({authorID: {$in: filterArr} }).toArray();
+      const authorInfo = await authorDB.find({authorID: {$in: filterAuthorArr} }).toArray();
       if (authorInfo !== null) {
         filterData.author = authorInfo;
       }
@@ -182,12 +199,23 @@ app.post("/search", urlencodedParser, async (req, res) => {
   }
 
   if (searchParams["publisher"]) {
+    const filterPublisherArr = []
       searchParams["publisherID"] = searchParams["publisher"];
+      const publisherArr = searchParams["publisherID"].split(",");
+      publisherArr.map((id, idx, arr) => {
+        // filterArr.push({authorID: Number(id)});
+        filterPublisherArr.push(Number(id));
+      });
+      if (checkParamValid(req.body.searchParams.publisher)) {
+        searchQuery.publisherID =  {$in: filterPublisherArr} };
       delete searchParams["publisher"];
       // const publisherInfo = await publisherDB.findOne({publisherID: Number(searchParams.publisherID)});
-      // if (publisherInfo !== null) {
-      //   filterData.publisher = publisherInfo;
-      // }
+      const publisherInfo = await publisherDB.find({publisherID: {$in: filterPublisherArr} }).toArray();
+      if (publisherInfo !== null) {
+        filterData.publisher = publisherInfo;
+      }
+  } else {
+    filterData.publisher = [];
   }
   delete searchParams["q"];
   delete searchParams["sort"];
@@ -201,14 +229,11 @@ app.post("/search", urlencodedParser, async (req, res) => {
 
   // const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
   // const searchQuery = { $text: { $search: req.body.keyword }, $or: filterArr };
-  let searchQuery;
-  if ((req.body.searchParams.author !== undefined)&&
-(req.body.searchParams.author !== null)&&
-(req.body.searchParams.author !== "")) {
-    searchQuery = { $text: { $search: req.body.keyword }, authorID: {$in: filterArr} };
-  } else {
-    searchQuery = { $text: { $search: req.body.keyword } };
-  }
+  // let searchQuery;
+
+  // else {
+  //   searchQuery = { $text: { $search: req.body.keyword } };
+  // }
   const searchQueryForFilter = { $text: { $search: req.body.keyword }};
   const filterProjection = { authorID: 1, publisherID: 1};
   const resultProjection = { _id: 0};
@@ -275,10 +300,17 @@ app.post("/search", urlencodedParser, async (req, res) => {
 // });
 
 app.post("/author-list", urlencodedParser, async (req, res) => {
-  const authorResult = await authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
-   if (authorListErr) throw authorListErr;
-   res.send({ authorData: authorListResult });
- });
+   const authorResult = await authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
+    if (authorListErr) throw authorListErr;
+    res.send({ authorData: authorListResult });
+  });
+});
+
+app.post("/publisher-list", urlencodedParser, async (req, res) => {
+   const publisherResult = await publisherDB.find({publisherID: {$in: req.body.publisherSet} }).toArray(function (publisherListErr, publisherListResult) {
+    if (publisherListErr) throw publisherListErr;
+    res.send({ publisherData: publisherListResult });
+  });
 });
 
 app.post("/product", urlencodedParser, async (req, res) => {
@@ -727,18 +759,22 @@ app.post("/check-password", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-details", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
+  const dataList = ["firstName", "lastName", "phoneNumber"];
+  const dataObj = {};
+  for (let key of dataList) {
+    if (req.body[key]) {
+      dataObj[key] = req.body[key];
+    }
+  }
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
       userDB.updateOne({ userID: req.body.userID },
         {
-          $set: {
-            firstName: req.body.newFirstName,
-            lastName: req.body.newLastName,
-            phoneNumber: req.body.newPhoneNumber
-          }
+          $set: dataObj
         }, { upsert: true });
       res.send({ "result": "Details has changed.", "status": true });
     } else {
@@ -747,6 +783,7 @@ app.post("/change-details", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-password", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID, password: req.body.password };
   userDB.findOne(userQuery, function (err, ress) {
@@ -760,12 +797,13 @@ app.post("/change-password", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-email", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
   userDB.findOne(userQuery, function (err, ress) {
     if (err) throw err;
     if (ress !== null) {
-      userDB.updateOne({ userID: req.body.userID }, { $set: { email: req.body.newEmail } }, { upsert: true });
+      userDB.updateOne({ userID: req.body.userID }, { $set: { email: req.body.email } }, { upsert: true });
       res.send({ "result": "Email has changed.", "status": true });
     } else {
       res.send({ "result": "Not found.", "status": false });
@@ -773,10 +811,13 @@ app.post("/change-email", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/registration", urlencodedParser, async (req, res) => {
+  const createdTime = (new Date()).getTime();
+  const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
   const userQuery = {
-    createdTime: req.body.createdTime,
-    userID: req.body.userID,
+    createdTime: createdTime,
+    userID: userID,
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     email: req.body.email,
