@@ -73,101 +73,19 @@ const authorDB = client.db("test").collection("authors");
 const basketDB = client.db("test").collection("baskets");
 const publisherDB = client.db("test").collection("publishers");
 
-// const data = JSON.parse(fs.readFileSync('./add.js', 'utf-8'));
-// //array
-// bookDB.insertMany(data, function(err, res) {
-//     if (err) throw err;
-//     console.log("Number of documents inserted: " + res.insertedCount);
-// });
-
-// const data = JSON.parse(fs.readFileSync('./add.js', 'utf-8'));
-// //object
-// authorDB.insertOne(data, function(err, res) {
-//     if (err) throw err;
-//     console.log("The document has been inserted");
-// });
-
-// var mySort = { published: -1 };
-// var myQuery1 = {publisherID: 3155};
-//   bookDB.find().sort(mySort).toArray(function(err, result) {
-//     if (err) throw err;
-//     console.log(result);
-//   });
-
-
-//once and forever
-// bookDB.dropIndexes();
-//
-// bookDB.createIndex({ name: 'text', author: 'text' }, {default_language: "none", language_override: "none"});
-
-// app.post("/search", urlencodedParser, async (req, res) => {
-//   let authorID = {$exists: true};
-//   if (req.body.authorID !== undefined) {
-//     authorID = Number(req.body.authorID);
-//   }
-//   // const searchQuery = { $text: { $search: req.body.keyword }};
-//   const projection = { ISBN: 1, name: 1};
-//   const loadQuantity = req.body.loadQuantity;
-
-//   // bookDB.find(searchQuery).project(projection).toArray(function(err, result) {
-//   if (req.body.searchParams !== undefined) {
-//     console.log(req.body.searchParams);
-//   }
-//   const searchParams = JSON.parse(JSON.stringify(req.body.searchParams));
-//   // const deepClone = req.body.searchParams;
-//   // searchParams["authorID"] = Number(searchParams["author"]);
-//   // searchParams["publisherID"] = Number(searchParams["publisher"]);
-//   if (searchParams["author"]) {
-//       searchParams["authorID"] = searchParams["author"];
-//       delete searchParams["author"];
-//   }
-
-//   if (searchParams["publisher"]) {
-//       searchParams["publisherID"] = searchParams["publisher"];
-//       delete searchParams["publisher"];
-//   }
-//   delete searchParams["q"];
-//   delete searchParams["sort"];
-
-//   for (const key in searchParams) {
-//     const parsed = Number(searchParams[key]);
-//     if (!isNaN(parsed)) {
-//       searchParams[key] = parsed;
-//     }
-//   }
-//   const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
-//   console.log(searchQuery);
-//   bookDB.find(searchQuery).limit(loadQuantity).toArray(function (searchErr, searchResult) {
-//     if (searchErr) throw searchErr;
-//     // console.log("searchResult.length: " + searchResult.length);
-//     res.send({ "result": searchResult });
-//   });
-// });
-
-
-// Updated
 app.post("/search", urlencodedParser, async (req, res) => {
-  let authorID = {$exists: true};
-  // if (req.body.searchParams.author !== undefined) {
-  //   authorID = Number(req.body.authorID);
-  // }
-  // const searchQuery = { $text: { $search: req.body.keyword }};
-  const projection = { ISBN: 1, name: 1};
   const loadQuantity = req.body.loadQuantity;
-
-  // bookDB.find(searchQuery).project(projection).toArray(function(err, result) {
   if (req.body.searchParams !== undefined) {
     console.log(req.body.searchParams);
   }
-  const searchParams = JSON.parse(JSON.stringify(req.body.searchParams));
-  // const deepClone = req.body.searchParams;
-  // searchParams["authorID"] = Number(searchParams["author"]);
-  // searchParams["publisherID"] = Number(searchParams["publisher"]);
 
-  let searchQuery = {$text: { $search: req.body.keyword }};
+  // deepClone
+  const searchParams = JSON.parse(JSON.stringify(req.body.searchParams));
+  console.log("searchParams: " + JSON.stringify(searchParams));
+  let searchQuery = { $text: { $search: req.body.keyword } };
 
   const checkParamValid = (param) => {
-    if ((param !== undefined)&&(param !== null)&&(param !== "")) {
+    if ((param !== undefined) && (param !== null) && (param !== "")) {
       return true;
     } else {
       return false;
@@ -175,70 +93,46 @@ app.post("/search", urlencodedParser, async (req, res) => {
   }
 
   const filterData = {};
-  const filterArr = [];
+
   if (searchParams["author"]) {
     const filterAuthorArr = [];
-    console.log("searchParams: " + searchParams["author"]);
-      // searchParams["authorID"] = searchParams["author"];
-      const authorParams = "50410, 28313";
-      const authorArr = searchParams["author"].split(",");
-      authorArr.map((id, idx, arr) => {
-        // filterAuthorArr.push({authorID: Number(id)});
-        filterAuthorArr.push(Number(id));
-      });
-      if (checkParamValid(req.body.searchParams.author)) {
-        searchQuery.authorID =  {$in: filterAuthorArr} };
-      delete searchParams["author"];
-      // const authorInfo = await authorDB.findOne({authorID: Number(searchParams.authorID)});
-      const authorInfo = await authorDB.find({authorID: {$in: filterAuthorArr} }).toArray();
-      if (authorInfo !== null) {
-        filterData.author = authorInfo;
-      }
+    const authorArr = searchParams["author"].split(",");
+    authorArr.map((id, idx, arr) => {
+      filterAuthorArr.push(Number(id));
+    });
+    if (checkParamValid(req.body.searchParams.author)) {
+      searchQuery.authorID = { $in: filterAuthorArr }
+    };
+    const authorInfo = await authorDB.find({ authorID: { $in: filterAuthorArr } }).toArray();
+    if (authorInfo !== null) {
+      filterData.author = authorInfo;
+    }
   } else {
     filterData.author = [];
   }
 
   if (searchParams["publisher"]) {
     const filterPublisherArr = []
-      searchParams["publisherID"] = searchParams["publisher"];
-      const publisherArr = searchParams["publisherID"].split(",");
-      publisherArr.map((id, idx, arr) => {
-        // filterArr.push({authorID: Number(id)});
-        filterPublisherArr.push(Number(id));
-      });
-      if (checkParamValid(req.body.searchParams.publisher)) {
-        searchQuery.publisherID =  {$in: filterPublisherArr} };
-      delete searchParams["publisher"];
-      // const publisherInfo = await publisherDB.findOne({publisherID: Number(searchParams.publisherID)});
-      const publisherInfo = await publisherDB.find({publisherID: {$in: filterPublisherArr} }).toArray();
-      if (publisherInfo !== null) {
-        filterData.publisher = publisherInfo;
-      }
+    searchParams["publisherID"] = searchParams["publisher"];
+    const publisherArr = searchParams["publisherID"].split(",");
+    publisherArr.map((id, idx, arr) => {
+      filterPublisherArr.push(Number(id));
+    });
+    if (checkParamValid(req.body.searchParams.publisher)) {
+      searchQuery.publisherID = { $in: filterPublisherArr }
+    };
+    const publisherInfo = await publisherDB.find({ publisherID: { $in: filterPublisherArr } }).toArray();
+    if (publisherInfo !== null) {
+      filterData.publisher = publisherInfo;
+    }
   } else {
     filterData.publisher = [];
   }
-  delete searchParams["q"];
-  delete searchParams["sort"];
 
-  for (const key in searchParams) {
-    const parsed = Number(searchParams[key]);
-    if (!isNaN(parsed)) {
-      searchParams[key] = parsed;
-    }
-  }
-
-  // const searchQuery = { $text: { $search: req.body.keyword }, ...searchParams };
-  // const searchQuery = { $text: { $search: req.body.keyword }, $or: filterArr };
-  // let searchQuery;
-
-  // else {
-  //   searchQuery = { $text: { $search: req.body.keyword } };
-  // }
-  const searchQueryForFilter = { $text: { $search: req.body.keyword }};
-  const filterProjection = { authorID: 1, publisherID: 1};
-  const resultProjection = { _id: 0};
-  console.log(searchQuery);
-  const responseData = {};
+  const searchQueryForFilter = { $text: { $search: req.body.keyword } };
+  const filterProjection = { authorID: 1, publisherID: 1 };
+  const resultProjection = { _id: 0 };
+  console.log("searchQuery: " + JSON.stringify(searchQuery));
 
   const getDataSet = await bookDB.find(searchQueryForFilter).project(filterProjection).limit(loadQuantity).toArray();
 
@@ -251,63 +145,35 @@ app.post("/search", urlencodedParser, async (req, res) => {
     });
     x = Array.from(authorSet);
     y = Array.from(publisherSet);
-    return {"authorSet" : x, "publisherSet": y};
+    return { "authorSet": x, "publisherSet": y };
   }
 
-  const authorSet = await getFilterData(getDataSet).authorSet;
-  const publisherSet = await getFilterData(getDataSet).publisherSet;
+  const setData = getFilterData(getDataSet);
+  const authorSet = setData.authorSet;
+  const publisherSet = setData.publisherSet;
 
-  const authorResult = await authorDB.find({authorID: {$in: authorSet} }).toArray();
-  //
-  // const publisherSet = await bookDB.find(searchQueryForFilter).project(filterProjection).limit(loadQuantity).toArray(function(err, result) {
-  //   const publisherSet = new Set();
-  //   result.map(item => {
-  //     publisherSet.add(item.authorID);
-  //   })
-  //   return Array.from(publisherSet);
-  // });
-  //
+  const authorResult = await authorDB.find({ authorID: { $in: authorSet } }).toArray();
   const bookResult = await bookDB.find(searchQuery).project(resultProjection).limit(loadQuantity).toArray();
-  //
+
   res.send({
     "result": bookResult,
-    "authorData" : authorResult,
-    "authorSet" : authorSet,
-    "publisherSet" : publisherSet,
+    "authorData": authorResult,
+    "authorSet": authorSet,
+    "publisherSet": publisherSet,
     "filterData": filterData
   });
 
 });
 
-// app.post("/product", urlencodedParser, async (req, res) => {
-//   const searchQuery = { ISBN: Number(req.body.id) };
-//   let product, author;
-//   bookDB.findOne(searchQuery, function (productErr, productResult) {
-//     if (productErr) throw productErr;
-//     console.log(productResult);
-//     if (productResult !== undefined) {
-//       authorDB.findOne({authorID: Number(productResult.authorID)}, function (authorErr, authorResult) {
-//         if (authorErr) throw authorErr;
-//         console.log(authorResult);
-//         if (authorResult !== undefined) {
-//           bookDB.find({authorID: authorResult.authorID, ISBN: { $ne: Number(req.body.id) }}).toArray(function (sameAuthorErr, sameAuthorResult) {
-//             if (sameAuthorErr) throw sameAuthorErr;
-//             res.send({ product: productResult, author: authorResult, sameAuthor: sameAuthorResult});
-//       });
-//     }
-//   });}
-// });
-// });
-
 app.post("/author-list", urlencodedParser, async (req, res) => {
-   const authorResult = await authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
+   authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
     if (authorListErr) throw authorListErr;
     res.send({ authorData: authorListResult });
   });
 });
 
 app.post("/publisher-list", urlencodedParser, async (req, res) => {
-   const publisherResult = await publisherDB.find({publisherID: {$in: req.body.publisherSet} }).toArray(function (publisherListErr, publisherListResult) {
+   publisherDB.find({publisherID: {$in: req.body.publisherSet} }).toArray(function (publisherListErr, publisherListResult) {
     if (publisherListErr) throw publisherListErr;
     res.send({ publisherData: publisherListResult });
   });
@@ -315,7 +181,6 @@ app.post("/publisher-list", urlencodedParser, async (req, res) => {
 
 app.post("/product", urlencodedParser, async (req, res) => {
   const searchQuery = { ISBN: Number(req.body.id) };
-  let product, author;
   bookDB.findOne(searchQuery, function (productErr, productResult) {
     if (productErr) throw productErr;
     if (productResult !== undefined) {
@@ -354,55 +219,52 @@ app.post("/random-products", urlencodedParser, async (req, res) => {
     { $sample: { size: 10 } }
   ]).toArray(function (randomProductsErr, randomProductsResult) {
     if (randomProductsErr) throw randomProductsErr;
-    // console.log(randomProductsResult);
     res.send({ randomProducts: randomProductsResult });
   });
 });
 
 app.post("/basket-list", urlencodedParser, async (req, res) => {
   function sortByTime(product1, product2) {
-    if (product1.time < product2.time) {return 1;}
-    if (product1.time > product2.time) {return -1;}
+    if (product1.time < product2.time) { return 1; }
+    if (product1.time > product2.time) { return -1; }
     return 0;
   }
-
-  let userID;
   if (req.body.userID === null) {
     const sessionQuery = { _id: req.signedCookies.server_ssID };
     sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
       if (sessionErr) throw sessionErr;
       if (!sessionRes.basket) {
-        // basketDB.insertOne({ userID: Number(req.body.userID), basket: []});
-        // res.send({basketListResult: []});
         sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { basket: [] } }, { upsert: true });
-        res.send({basketListResult: []});
+        res.send({ basketListResult: [], basketItemsResult: [] });
       } else {
-        res.send({basketListResult: sessionRes.basket.sort(sortByTime)});
+        const items = [];
+        sessionRes.basket.map((item) => {
+          items.push(item.productID);
+        });
+        bookDB.find({ ISBN: { "$in": items } }).toArray((basketItemsErr, basketItemsRes) => {
+          if (basketItemsErr) throw basketItemsErr;
+          res.send({ basketListResult: sessionRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes });
+        });
       }
     });
   } else {
-    basketDB.findOne({userID: req.body.userID}, function (basketListErr, basketListResult) {
-      var sortBy = { time: 1 };
+    basketDB.findOne({ userID: req.body.userID }, (basketListErr, basketListRes) => {
       if (basketListErr) throw basketListErr;
-      if (!basketListResult) {
-        basketDB.insertOne({ userID: req.body.userID, basket: []});
-        res.send({basketListResult: []});
-      } else {
-        // if ((req.body.sort === "update")||(req.body.sort === "newload")) {
-        //   res.send({basketListResult: basketListResult.basket.sort(sortByTime)});
-        // } else {
-        //   res.send({basketListResult: basketListResult.basket});
-        // }
-          res.send({basketListResult: basketListResult.basket.sort(sortByTime)});
-      }
-    })
-}
+      const items = [];
+      basketListRes.basket.map((item) => {
+        items.push(item.productID);
+      });
+      bookDB.find({ ISBN: { "$in": items } }).toArray((basketItemsErr, basketItemsRes) => {
+        if (basketItemsErr) throw basketItemsRes;
+        res.send({ basketListResult: basketListRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes });
+      });
+    });
+  }
 });
 
 app.post("/basket-items-data", urlencodedParser, async (req, res) => {
   bookDB.find({ISBN : { "$in" : req.body.basketItems}}).toArray(function (basketItemsErr, basketItemsResult) {
     if (basketItemsErr) throw basketItemsErr;
-    // console.log(basketItemsResult);
     res.send({ basketItemsResult: basketItemsResult });
   });
 });
@@ -415,199 +277,72 @@ app.post("/send-basket", urlencodedParser, async (req, res) => {
   })});
 
 app.post("/update-basket", urlencodedParser, async (req, res) => {
-  // basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
-  //   if (basketListErr) throw basketListErr;
-  //   console.log(basketListResult);
-  //   if (Number(req.body.productQuantity) !== 0) {
-  //     // if (basketListResult.basket.length === 0) {
-  //     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}}, {upsert: true});
-  //     //   res.send({"result": "pushed 0"});
-  //     // } else {
-  //     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID}}}, {upsert: true});
-  //     //   // basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}});
-  //     //   res.send({"result": "pushed"});
-  //     // }
-  //
-  //      const query = { userID : Number(req.body.userID)};
-  //       basketDB.updateOne(query, { $push: {basket: {$each: [{"productID": Number(req.body.productID), "productQuantity": Number(req.body.productQuantity)}]}}}, {upsert: true});
-  //       res.send({"result": "setted"});
-  //   } else {
-  //     basketDB.updateOne({ userID: Number(req.body.userID) }, { $pull: {basket: {productID: req.body.productID}}});
-  //     res.send({"result": "pulled"});
-  //   }
-  // })});
-
-// ------------------------------------------------------------------------------
-if (req.body.userID === null) {
-  const guestID = req.signedCookies.server_ssID;
-  const productID = Number(req.body.productID);
-  const productQuantity = Number(req.body.productQuantity);
-  const find = await sessionDB.find({_id: guestID, basket: {$elemMatch: {productID: productID}}}).toArray();
-  const d = new Date();
-  const time = d.getTime();
-  let modifiedCount;
-  if (productQuantity !== 0) {
-    if (find.length === 0) {
-      const update = await sessionDB.updateOne({_id: guestID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
-      modifiedCount = update.modifiedCount;
+  // guest
+  if (req.body.userID === null) {
+    const guestID = req.signedCookies.server_ssID;
+    const productID = Number(req.body.productID);
+    const productQuantity = Number(req.body.productQuantity);
+    const find = await sessionDB.find({ _id: guestID, basket: { $elemMatch: { productID: productID } } }).toArray();
+    const time = (new Date()).getTime();
+    let modifiedCount;
+    if (productQuantity !== 0) {
+      if (find.length === 0) {
+        const update = await sessionDB.updateOne({ _id: guestID }, { $push: { basket: { $each: [{ "productID": productID, "productQuantity": productQuantity, "time": time }] } } }, { upsert: true });
+        modifiedCount = update.modifiedCount;
+      } else {
+        const query = { _id: guestID, "basket.productID": productID };
+        const updateDocument = { $set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time } };
+        const update = await sessionDB.updateOne(query, updateDocument);
+        modifiedCount = update.modifiedCount;
+      }
     } else {
-      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
-      // if (removeItem.modifiedCount !== 0) {
-      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
-      // }
-      const query = { _id: guestID, "basket.productID": productID };
-      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
-      const update = await sessionDB.updateOne(query, updateDocument);
-      modifiedCount = update.modifiedCount;
+      if (find.length !== 0) {
+        const update = await sessionDB.updateOne({ _id: guestID }, { $pull: { basket: { productID: productID } } });
+        modifiedCount = update.modifiedCount;
+      }
     }
-  } else {
-    if (find.length !== 0) {
-      const update = await sessionDB.updateOne({_id: guestID}, { $pull: {basket: {productID: productID}}});
-      modifiedCount = update.modifiedCount;
-    }
-  }
-  if (modifiedCount === 1) {
-    res.send({"result": "Updated"});
-  } else {
-    res.send({"result": "Error"});
-  }
-} else {
-  const userID = req.body.userID;
-  const productID = Number(req.body.productID);
-  const productQuantity = Number(req.body.productQuantity);
-  const find = await basketDB.find({userID: userID, basket: {$elemMatch: {productID: productID}}}).toArray();
-  const d = new Date();
-  const time = d.getTime();
-  let modifiedCount;
-  if (productQuantity !== 0) {
-    if (find.length === 0) {
-      const update = await basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
-      modifiedCount = update.modifiedCount;
+    if (modifiedCount === 1) {
+      res.send({ "result": "Updated" });
     } else {
-      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
-      // if (removeItem.modifiedCount !== 0) {
-      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
-      // }
-      const query = { userID: userID, "basket.productID": productID };
-      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
-      const update = await basketDB.updateOne(query, updateDocument);
-      modifiedCount = update.modifiedCount;
+      res.send({ "result": "Error" });
     }
   } else {
-    if (find.length !== 0) {
-      const update = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
-      modifiedCount = update.modifiedCount;
-    }
-  }
-  if (modifiedCount === 1) {
-    res.send({"result": "Updated"});
-  } else {
-    res.send({"result": "Error"});
-  }
-}
-
-});
-
-// basketDB.findOne({userID: Number(req.body.userID)}, function (basketListErr, basketListResult) {
-//   if (basketListErr) throw basketListErr;
-//   console.log(basketListResult);
-//   if (Number(req.body.productQuantity) !== 0) {
-//     // if (basketListResult.basket.length === 0) {
-//     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}}, {upsert: true});
-//     //   res.send({"result": "pushed 0"});
-//     // } else {
-//     //   basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID}}}, {upsert: true});
-//     //   // basketDB.updateOne({ userID: Number(req.body.userID) }, { $push: {basket: {productID: req.body.productID, productQuantity: req.body.productQuantity}}});
-//     //   res.send({"result": "pushed"});
-//     // }
-//
-//      const query = { userID : Number(req.body.userID)};
-//       basketDB.updateOne(query, { $push: {basket: {$each: [{"productID": Number(req.body.productID), "productQuantity": Number(req.body.productQuantity)}]}}}, {upsert: true});
-//       res.send({"result": "setted"});
-//   } else {
-//     basketDB.updateOne({ userID: Number(req.body.userID) }, { $pull: {basket: {productID: req.body.productID}}});
-//     res.send({"result": "pulled"});
-//   }
-// })});
-
-// ------------------------------------------------------------------------------
-
-  // const query = { userID : req.body.userID, "basket.productID": req.body.productID};
-  // let updateDocument;
-  // if (req.body.productQuantity === 0) {
-  //   updateDocument = {
-  //     $pull: { basket: { productID: req.body.productID } }
-  //   };
-  // } else {
-  //   updateDocument = {
-  //     $set: { "basket.$.productQuantity": req.body.productQuantity }
-  //   };
-  // }
-  // const result = await basketDB.updateOne(query, updateDocument);
-  // res.send({"result": "Updated", "awaitResult" : result});
-// });
-
-// app.post("/basket-items-data", urlencodedParser, async (req, res) => {
-//   const userQuery = { userID: req.body.userID };
-//   userDB.findOne(userQuery, function (err, ress) {
-//     if (err) throw err;
-//     if (ress !== null) {
-//       userDB.updateOne({ userID: req.body.userID },
-//         {
-//           $set: {
-//             basketData: req.body.basketData
-//           }
-//         }, { upsert: true });
-//       res.send({ "result": "BasketData has been updated.", "status": true });
-//     } else {
-//       res.send({ "result": "Not found.", "status": false });
-//     }
-//   });
-// });
-
-app.post("/g-update-basket", urlencodedParser, async (req, res) => {
-  if (req.signedCookies.server_ssID) {
-      const sessionQuery = { _id: req.signedCookies.server_ssID };
-      sessionDB.updateOne({ sessionQuery }, { $set: { userID: ress.userID } }, { upsert: true });
-  }
-  const sessionID =req.signedCookies.server_ssID;
-  const productID = Number(req.body.productID);
-  const productQuantity = Number(req.body.productQuantity);
-  const find = await sessionDB.find({_id: sessionID, basket: {$elemMatch: {productID: productID}}}).toArray();
-  const d = new Date();
-  const time = d.getTime();
-  let modifiedCount;
-  if (productQuantity !== 0) {
-    if (find.length === 0) {
-      const update = await basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity, "time": time}]}}}, {upsert: true});
-      modifiedCount = update.modifiedCount;
+    // user logged in
+    const userID = req.body.userID;
+    const productID = Number(req.body.productID);
+    const productQuantity = Number(req.body.productQuantity);
+    const find = await basketDB.find({ userID: userID, basket: { $elemMatch: { productID: productID } } }).toArray();
+    const time = (new Date()).getTime();
+    let modifiedCount;
+    if (productQuantity !== 0) {
+      if (find.length === 0) {
+        const update = await basketDB.updateOne({ userID: userID }, { $push: { basket: { $each: [{ "productID": productID, "productQuantity": productQuantity, "time": time }] } } }, { upsert: true });
+        modifiedCount = update.modifiedCount;
+      } else {
+        const query = { userID: userID, "basket.productID": productID };
+        const updateDocument = { $set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time } };
+        const update = await basketDB.updateOne(query, updateDocument);
+        modifiedCount = update.modifiedCount;
+      }
     } else {
-      // const removeItem = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
-      // if (removeItem.modifiedCount !== 0) {
-      //   basketDB.updateOne({userID: userID}, { $push: {basket: {$each: [{"productID": productID, "productQuantity": productQuantity}]}}}, {upsert: true});
-      // }
-      const query = { userID: userID, "basket.productID": productID };
-      const updateDocument = {$set: { "basket.$.productQuantity": productQuantity, "basket.$.time": time }};
-      const update = await basketDB.updateOne(query, updateDocument);
-      modifiedCount = update.modifiedCount;
+      if (find.length !== 0) {
+        const update = await basketDB.updateOne({ userID: userID }, { $pull: { basket: { productID: productID } } });
+        modifiedCount = update.modifiedCount;
+      }
     }
-  } else {
-    if (find.length !== 0) {
-      const update = await basketDB.updateOne({userID: userID}, { $pull: {basket: {productID: productID}}});
-      modifiedCount = update.modifiedCount;
+    if (modifiedCount === 1) {
+      res.send({ "result": "Updated" });
+    } else {
+      res.send({ "result": "Error" });
     }
   }
-  if (modifiedCount === 1) {
-    res.send({"result": "Updated"});
-  } else {
-    res.send({"result": "Error"});
-  }
+
 });
 
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   if (req.signedCookies.server_ssID) {
@@ -633,7 +368,6 @@ app.get("/", urlencodedParser, async (req, res) => {
             });
           } else {
             res.send({
-              // "result": "Hi good old " + sessionRes.session,
               "result": "Old Guest",
               "isLoggedIn": false,
               "userID" : null,
@@ -654,32 +388,10 @@ app.get("/", urlencodedParser, async (req, res) => {
   }
 });
 
-app.post("/login-old", urlencodedParser, async (req, res) => {
-  res.setHeader("Access-Control-Expose-Headers", "ETag");
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  const userQuery = { email: req.body.email };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      if (req.body.password === ress.password) {
-        sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: ress.userID } }, { upsert: true });
-        res.send({"result": true, "message": "Login successful."});
-      } else {
-        res.send({"result": false, "message": "The password you entered is incorrect. Please try again."});
-      }
-    } else {
-      res.send({"result": false, "message": "We couldn't find an account with that email address."});
-    }
-  });
-});
-
 app.post("/login", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
@@ -759,7 +471,6 @@ app.post("/check-password", urlencodedParser, async (req, res) => {
   });
 });
 
-//Updated
 app.post("/change-details", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
   const dataList = ["firstName", "lastName", "phoneNumber"];
@@ -783,7 +494,6 @@ app.post("/change-details", urlencodedParser, async (req, res) => {
   });
 });
 
-//Updated
 app.post("/change-password", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID, password: req.body.password };
   userDB.findOne(userQuery, function (err, ress) {
@@ -797,7 +507,6 @@ app.post("/change-password", urlencodedParser, async (req, res) => {
   });
 });
 
-//Updated
 app.post("/change-email", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
   userDB.findOne(userQuery, function (err, ress) {
@@ -811,17 +520,13 @@ app.post("/change-email", urlencodedParser, async (req, res) => {
   });
 });
 
-//Updated
 app.post("/registration", urlencodedParser, async (req, res) => {
   const createdTime = (new Date()).getTime();
   const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
   const userQuery = {
     createdTime: createdTime,
     userID: userID,
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    password: req.body.password
+    ...req.body
   };
   userDB.insertOne(userQuery, function (err, ress) {
     if (err) throw err;
@@ -842,32 +547,14 @@ app.post("/user/profile", urlencodedParser, async (req, res) => {
 });
 
 app.post("/place-order", urlencodedParser, async (req, res) => {
-  const d = new Date();
-  const time = d.getTime();
+  const createdTime = (new Date()).getTime();
+  const orderID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
   const orderQuery = {
-    userID: req.body.userID,
-    time: time,
-    email: req.body.email,
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    address: req.body.address,
-    city: req.body.city,
-    county: req.body.county,
-    orderType: req.body.orderType,
-    deliveryMethod: req.body.deliveryMethod,
-    deliveryFee: req.body.deliveryFee,
-    shopAddress: req.body.shopAddress,
-    order: req.body.order,
-    totalQuantity: req.body.totalQuantity,
-    subTotal: req.body.subTotal,
-    totalPay: req.body.totalPay,
+    orderID: orderID,
+    time: createdTime,
+    ...req.body,
     status: "Delivered"
   };
-
-  // const insertOrder = await orderDB.insertOne(orderQuery, function (orderErr, orderRes) {
-  //   if (orderErr) throw orderErr;
-  //   return (orderRes.acknowledged).toString();
-  // });
 
   const x = await orderDB.insertOne(orderQuery).then(myRes => {return myRes.acknowledged});
 
@@ -875,24 +562,12 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
     basketDB.updateOne({ userID: req.body.userID }, { $set: { basket: [] } }, { upsert: true }).then(myRess => {
       console.log(myRess);
       if (myRess.modifiedCount === 1) {
-        res.send({"result" : x, "orderID": time});
+        res.send({"result" : x, "orderID": orderID});
       }
     });
   } else {
-      res.send({"result" : x, "orderID": time});
+      res.send({"result" : x, "orderID": orderID});
   }
-
-  // const order = req.body.order;
-  //
-  // for (let i = 0; i < order.length; i++) {
-  //   const updateQuantity = await bookDB.updateOne(
-  //      { ISBN: order[i].ISBN, $inc: { quantity: -Number(order[i].productQuantity) } }, function (qErr, qRes) {
-  //        if (orderErr) throw orderErr;
-  //      }
-  // );
-  // }
-
-  // res.send({ "result": insertOrder, "hehe": "hihi" });
 });
 
 app.post("/get-orders", urlencodedParser, async (req, res) => {
@@ -909,18 +584,12 @@ app.post("/get-orders", urlencodedParser, async (req, res) => {
   });
 });
 
-app.post("/load-order", urlencodedParser, async (req, res) => {
+app.post("/order-detail", urlencodedParser, async (req, res) => {
   const orderQuery = {
-    time: Number(req.body.orderID)
+    orderID: req.body.orderID
   };
   orderDB.findOne(orderQuery, function (orderErr, orderRes) {
     if (orderErr) throw orderErr;
-    console.log(orderRes);
-    // if (orderRes !== null) {
-    //   res.send({ "order": orderRes });
-    // } else {
-    //   res.send({ "order": "Not found" });
-    // }
     res.send({ "order": orderRes });
   });
 });
@@ -928,27 +597,11 @@ app.post("/load-order", urlencodedParser, async (req, res) => {
 app.post("/signout", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-
-  // const sessionQuery = { _id: req.signedCookies.server_ssID, userID: req.body.userID };
-  // sessionDB.deleteOne(sessionQuery, function (sessionErr, sessionRes) {
-  //   if (sessionErr) throw sessionErr;
-  //   if (sessionRes !== null) {
-  //     console.log(req.body.userID + ' has signed out');
-  //     res.send({ "result": "Signed Out", "userID": sessionRes.userID });
-  //   } else {
-  //     res.send({ "result": "UserID not found" });
-  //   }
-  // });
 
   sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $unset: {userID: ""} }, { upsert: true });
   console.log(req.body.userID + ' has signed out');
   res.send({ "result": "Signed Out"});
-
-  // console.log(req.body.userID + ' has signed out');
-  // req.session.destroy(function(err) {
-  //   // cannot access session here
-  // })
 });
