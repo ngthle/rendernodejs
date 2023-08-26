@@ -73,6 +73,7 @@ const authorDB = client.db("test").collection("authors");
 const basketDB = client.db("test").collection("baskets");
 const publisherDB = client.db("test").collection("publishers");
 
+// Updated
 app.post("/search", urlencodedParser, async (req, res) => {
   const loadQuantity = req.body.loadQuantity;
   if (req.body.searchParams !== undefined) {
@@ -166,14 +167,14 @@ app.post("/search", urlencodedParser, async (req, res) => {
 });
 
 app.post("/author-list", urlencodedParser, async (req, res) => {
-   authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
+  authorDB.find({ authorID: { $in: req.body.authorSet } }).toArray(function (authorListErr, authorListResult) {
     if (authorListErr) throw authorListErr;
     res.send({ authorData: authorListResult });
   });
 });
 
 app.post("/publisher-list", urlencodedParser, async (req, res) => {
-   publisherDB.find({publisherID: {$in: req.body.publisherSet} }).toArray(function (publisherListErr, publisherListResult) {
+  publisherDB.find({ publisherID: { $in: req.body.publisherSet } }).toArray(function (publisherListErr, publisherListResult) {
     if (publisherListErr) throw publisherListErr;
     res.send({ publisherData: publisherListResult });
   });
@@ -184,9 +185,9 @@ app.post("/product", urlencodedParser, async (req, res) => {
   bookDB.findOne(searchQuery, function (productErr, productResult) {
     if (productErr) throw productErr;
     if (productResult !== undefined) {
-      authorDB.findOne({authorID: Number(productResult.authorID)}, function (authorErr, authorResult) {
+      authorDB.findOne({ authorID: Number(productResult.authorID) }, function (authorErr, authorResult) {
         if (authorErr) throw authorErr;
-            res.send({ product: productResult, author: authorResult});
+        res.send({ product: productResult, author: authorResult });
       });
     }
   });
@@ -223,6 +224,7 @@ app.post("/random-products", urlencodedParser, async (req, res) => {
   });
 });
 
+// Updated
 app.post("/basket-list", urlencodedParser, async (req, res) => {
   function sortByTime(product1, product2) {
     if (product1.time < product2.time) { return 1; }
@@ -265,6 +267,7 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
 app.post("/basket-items-data", urlencodedParser, async (req, res) => {
   bookDB.find({ISBN : { "$in" : req.body.basketItems}}).toArray(function (basketItemsErr, basketItemsResult) {
     if (basketItemsErr) throw basketItemsErr;
+    // console.log(basketItemsResult);
     res.send({ basketItemsResult: basketItemsResult });
   });
 });
@@ -277,13 +280,13 @@ app.post("/send-basket", urlencodedParser, async (req, res) => {
   })});
 
 app.post("/update-basket", urlencodedParser, async (req, res) => {
-  // guest
   if (req.body.userID === null) {
     const guestID = req.signedCookies.server_ssID;
     const productID = Number(req.body.productID);
     const productQuantity = Number(req.body.productQuantity);
     const find = await sessionDB.find({ _id: guestID, basket: { $elemMatch: { productID: productID } } }).toArray();
-    const time = (new Date()).getTime();
+    const d = new Date();
+    const time = d.getTime();
     let modifiedCount;
     if (productQuantity !== 0) {
       if (find.length === 0) {
@@ -307,12 +310,12 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
       res.send({ "result": "Error" });
     }
   } else {
-    // user logged in
     const userID = req.body.userID;
     const productID = Number(req.body.productID);
     const productQuantity = Number(req.body.productQuantity);
     const find = await basketDB.find({ userID: userID, basket: { $elemMatch: { productID: productID } } }).toArray();
-    const time = (new Date()).getTime();
+    const d = new Date();
+    const time = d.getTime();
     let modifiedCount;
     if (productQuantity !== 0) {
       if (find.length === 0) {
@@ -336,13 +339,12 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
       res.send({ "result": "Error" });
     }
   }
-
 });
 
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   if (req.signedCookies.server_ssID) {
@@ -368,6 +370,7 @@ app.get("/", urlencodedParser, async (req, res) => {
             });
           } else {
             res.send({
+              // "result": "Hi good old " + sessionRes.session,
               "result": "Old Guest",
               "isLoggedIn": false,
               "userID" : null,
@@ -391,7 +394,7 @@ app.get("/", urlencodedParser, async (req, res) => {
 app.post("/login", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
@@ -471,6 +474,7 @@ app.post("/check-password", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-details", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
   const dataList = ["firstName", "lastName", "phoneNumber"];
@@ -494,6 +498,7 @@ app.post("/change-details", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-password", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID, password: req.body.password };
   userDB.findOne(userQuery, function (err, ress) {
@@ -507,6 +512,7 @@ app.post("/change-password", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/change-email", urlencodedParser, async (req, res) => {
   const userQuery = { userID: req.body.userID };
   userDB.findOne(userQuery, function (err, ress) {
@@ -520,6 +526,7 @@ app.post("/change-email", urlencodedParser, async (req, res) => {
   });
 });
 
+//Updated
 app.post("/registration", urlencodedParser, async (req, res) => {
   const createdTime = (new Date()).getTime();
   const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
@@ -551,7 +558,6 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
   const orderID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
   const orderQuery = {
     orderID: orderID,
-    time: createdTime,
     ...req.body,
     status: "Delivered"
   };
@@ -597,10 +603,10 @@ app.post("/order-detail", urlencodedParser, async (req, res) => {
 app.post("/signout", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-
+  
   sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $unset: {userID: ""} }, { upsert: true });
   console.log(req.body.userID + ' has signed out');
   res.send({ "result": "Signed Out"});
