@@ -73,7 +73,6 @@ const authorDB = client.db("test").collection("authors");
 const basketDB = client.db("test").collection("baskets");
 const publisherDB = client.db("test").collection("publishers");
 
-// Updated
 app.post("/search", urlencodedParser, async (req, res) => {
   const loadQuantity = req.body.loadQuantity;
   if (req.body.searchParams !== undefined) {
@@ -167,14 +166,14 @@ app.post("/search", urlencodedParser, async (req, res) => {
 });
 
 app.post("/author-list", urlencodedParser, async (req, res) => {
-  authorDB.find({ authorID: { $in: req.body.authorSet } }).toArray(function (authorListErr, authorListResult) {
+   authorDB.find({authorID: {$in: req.body.authorSet} }).toArray(function (authorListErr, authorListResult) {
     if (authorListErr) throw authorListErr;
     res.send({ authorData: authorListResult });
   });
 });
 
 app.post("/publisher-list", urlencodedParser, async (req, res) => {
-  publisherDB.find({ publisherID: { $in: req.body.publisherSet } }).toArray(function (publisherListErr, publisherListResult) {
+   publisherDB.find({publisherID: {$in: req.body.publisherSet} }).toArray(function (publisherListErr, publisherListResult) {
     if (publisherListErr) throw publisherListErr;
     res.send({ publisherData: publisherListResult });
   });
@@ -185,9 +184,9 @@ app.post("/product", urlencodedParser, async (req, res) => {
   bookDB.findOne(searchQuery, function (productErr, productResult) {
     if (productErr) throw productErr;
     if (productResult !== undefined) {
-      authorDB.findOne({ authorID: Number(productResult.authorID) }, function (authorErr, authorResult) {
+      authorDB.findOne({authorID: Number(productResult.authorID)}, function (authorErr, authorResult) {
         if (authorErr) throw authorErr;
-        res.send({ product: productResult, author: authorResult });
+            res.send({ product: productResult, author: authorResult});
       });
     }
   });
@@ -224,7 +223,6 @@ app.post("/random-products", urlencodedParser, async (req, res) => {
   });
 });
 
-// Updated
 app.post("/basket-list", urlencodedParser, async (req, res) => {
   function sortByTime(product1, product2) {
     if (product1.time < product2.time) { return 1; }
@@ -267,7 +265,6 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
 app.post("/basket-items-data", urlencodedParser, async (req, res) => {
   bookDB.find({ISBN : { "$in" : req.body.basketItems}}).toArray(function (basketItemsErr, basketItemsResult) {
     if (basketItemsErr) throw basketItemsErr;
-    // console.log(basketItemsResult);
     res.send({ basketItemsResult: basketItemsResult });
   });
 });
@@ -280,13 +277,13 @@ app.post("/send-basket", urlencodedParser, async (req, res) => {
   })});
 
 app.post("/update-basket", urlencodedParser, async (req, res) => {
+  // guest
   if (req.body.userID === null) {
     const guestID = req.signedCookies.server_ssID;
     const productID = Number(req.body.productID);
     const productQuantity = Number(req.body.productQuantity);
     const find = await sessionDB.find({ _id: guestID, basket: { $elemMatch: { productID: productID } } }).toArray();
-    const d = new Date();
-    const time = d.getTime();
+    const time = (new Date()).getTime();
     let modifiedCount;
     if (productQuantity !== 0) {
       if (find.length === 0) {
@@ -310,12 +307,12 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
       res.send({ "result": "Error" });
     }
   } else {
+    // user logged in
     const userID = req.body.userID;
     const productID = Number(req.body.productID);
     const productQuantity = Number(req.body.productQuantity);
     const find = await basketDB.find({ userID: userID, basket: { $elemMatch: { productID: productID } } }).toArray();
-    const d = new Date();
-    const time = d.getTime();
+    const time = (new Date()).getTime();
     let modifiedCount;
     if (productQuantity !== 0) {
       if (find.length === 0) {
@@ -339,7 +336,157 @@ app.post("/update-basket", urlencodedParser, async (req, res) => {
       res.send({ "result": "Error" });
     }
   }
+
 });
+
+app.post("/check-email", urlencodedParser, async (req, res) => {
+  const userQuery = { email: req.body.email };
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({ "result": "An account with email " + ress.email + " already exist.", "status": false });
+    } else {
+      res.send({ "result": "You can use this email.", "status": true });
+    }
+  });
+});
+
+app.post("/check-password", urlencodedParser, async (req, res) => {
+  const userQuery = { userID: req.body.userID, password: req.body.password };
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({ "result": "Password matched.", "status": true });
+    } else {
+      res.send({ "result": "The password you entered is incorrect. Please try again.", "status": false });
+    }
+  });
+});
+
+app.post("/change-details", urlencodedParser, async (req, res) => {
+  const userQuery = { userID: req.body.userID };
+  const dataList = ["firstName", "lastName", "phoneNumber"];
+  const dataObj = {};
+  for (let key of dataList) {
+    if (req.body[key]) {
+      dataObj[key] = req.body[key];
+    }
+  }
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      userDB.updateOne({ userID: req.body.userID },
+        {
+          $set: dataObj
+        }, { upsert: true });
+      res.send({ "result": "Details has changed.", "status": true });
+    } else {
+      res.send({ "result": "Not found.", "status": false });
+    }
+  });
+});
+
+app.post("/change-password", urlencodedParser, async (req, res) => {
+  const userQuery = { userID: req.body.userID, password: req.body.password };
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      userDB.updateOne({ userID: req.body.userID }, { $set: { password: req.body.newPassword } }, { upsert: true });
+      res.send({ "result": "Password has changed.", "status": true });
+    } else {
+      res.send({ "result": "Not found.", "status": false });
+    }
+  });
+});
+
+app.post("/change-email", urlencodedParser, async (req, res) => {
+  const userQuery = { userID: req.body.userID };
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      userDB.updateOne({ userID: req.body.userID }, { $set: { email: req.body.email } }, { upsert: true });
+      res.send({ "result": "Email has changed.", "status": true });
+    } else {
+      res.send({ "result": "Not found.", "status": false });
+    }
+  });
+});
+
+app.post("/registration", urlencodedParser, async (req, res) => {
+  const createdTime = (new Date()).getTime();
+  const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
+  const userQuery = {
+    createdTime: createdTime,
+    userID: userID,
+    ...req.body
+  };
+  userDB.insertOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    res.send({ "result": ress.acknowledged });
+  });
+});
+
+app.post("/user/profile", urlencodedParser, async (req, res) => {
+  const userQuery = { userID: req.body.userID };
+  userDB.findOne(userQuery, function (err, ress) {
+    if (err) throw err;
+    if (ress !== null) {
+      res.send({ "isFound": true, "userID": ress.userID, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email });
+    } else {
+      res.send({ "isFound": false });
+    }
+  });
+});
+
+app.post("/place-order", urlencodedParser, async (req, res) => {
+  const createdTime = (new Date()).getTime();
+  const orderID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
+  const orderQuery = {
+    orderID: orderID,
+    time: createdTime,
+    ...req.body,
+    status: "Delivered"
+  };
+
+  const x = await orderDB.insertOne(orderQuery).then(myRes => {return myRes.acknowledged});
+
+  if ((req.body.userID !== null)&&(x === true)) {
+    basketDB.updateOne({ userID: req.body.userID }, { $set: { basket: [] } }, { upsert: true }).then(myRess => {
+      console.log(myRess);
+      if (myRess.modifiedCount === 1) {
+        res.send({"result" : x, "orderID": orderID});
+      }
+    });
+  } else {
+      res.send({"result" : x, "orderID": orderID});
+  }
+});
+
+app.post("/get-orders", urlencodedParser, async (req, res) => {
+  const orderQuery = {
+    userID: req.body.userID
+  };
+  orderDB.find(orderQuery).toArray(function (orderErr, orderRes) {
+    if (orderErr) throw orderErr;
+    if (orderRes.length > 0) {
+      res.send({ "result": orderRes });
+    } else {
+      res.send({ "result": "Not found" });
+    }
+  });
+});
+
+app.post("/order-detail", urlencodedParser, async (req, res) => {
+  const orderQuery = {
+    orderID: req.body.orderID
+  };
+  orderDB.findOne(orderQuery, function (orderErr, orderRes) {
+    if (orderErr) throw orderErr;
+    res.send({ "order": orderRes });
+  });
+});
+
+//--------------------------------------------------
 
 app.get("/", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
@@ -447,156 +594,6 @@ app.post("/login", urlencodedParser, async (req, res) => {
     } else {
       res.send({"result": false, "message": "We couldn't find an account with that email address."});
     }
-  });
-});
-
-app.post("/check-email", urlencodedParser, async (req, res) => {
-  const userQuery = { email: req.body.email };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      res.send({ "result": "An account with email " + ress.email + " already exist.", "status": false });
-    } else {
-      res.send({ "result": "You can use this email.", "status": true });
-    }
-  });
-});
-
-app.post("/check-password", urlencodedParser, async (req, res) => {
-  const userQuery = { userID: req.body.userID, password: req.body.password };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      res.send({ "result": "Password matched.", "status": true });
-    } else {
-      res.send({ "result": "The password you entered is incorrect. Please try again.", "status": false });
-    }
-  });
-});
-
-//Updated
-app.post("/change-details", urlencodedParser, async (req, res) => {
-  const userQuery = { userID: req.body.userID };
-  const dataList = ["firstName", "lastName", "phoneNumber"];
-  const dataObj = {};
-  for (let key of dataList) {
-    if (req.body[key]) {
-      dataObj[key] = req.body[key];
-    }
-  }
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      userDB.updateOne({ userID: req.body.userID },
-        {
-          $set: dataObj
-        }, { upsert: true });
-      res.send({ "result": "Details has changed.", "status": true });
-    } else {
-      res.send({ "result": "Not found.", "status": false });
-    }
-  });
-});
-
-//Updated
-app.post("/change-password", urlencodedParser, async (req, res) => {
-  const userQuery = { userID: req.body.userID, password: req.body.password };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      userDB.updateOne({ userID: req.body.userID }, { $set: { password: req.body.newPassword } }, { upsert: true });
-      res.send({ "result": "Password has changed.", "status": true });
-    } else {
-      res.send({ "result": "Not found.", "status": false });
-    }
-  });
-});
-
-//Updated
-app.post("/change-email", urlencodedParser, async (req, res) => {
-  const userQuery = { userID: req.body.userID };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      userDB.updateOne({ userID: req.body.userID }, { $set: { email: req.body.email } }, { upsert: true });
-      res.send({ "result": "Email has changed.", "status": true });
-    } else {
-      res.send({ "result": "Not found.", "status": false });
-    }
-  });
-});
-
-//Updated
-app.post("/registration", urlencodedParser, async (req, res) => {
-  const createdTime = (new Date()).getTime();
-  const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
-  const userQuery = {
-    createdTime: createdTime,
-    userID: userID,
-    ...req.body
-  };
-  userDB.insertOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    res.send({ "result": ress.acknowledged });
-  });
-});
-
-app.post("/user/profile", urlencodedParser, async (req, res) => {
-  const userQuery = { userID: req.body.userID };
-  userDB.findOne(userQuery, function (err, ress) {
-    if (err) throw err;
-    if (ress !== null) {
-      res.send({ "isFound": true, "userID": ress.userID, "firstName": ress.firstName, "lastName": ress.lastName, "email": ress.email });
-    } else {
-      res.send({ "isFound": false });
-    }
-  });
-});
-
-app.post("/place-order", urlencodedParser, async (req, res) => {
-  const createdTime = (new Date()).getTime();
-  const orderID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
-  const orderQuery = {
-    orderID: orderID,
-    ...req.body,
-    status: "Delivered"
-  };
-
-  const x = await orderDB.insertOne(orderQuery).then(myRes => {return myRes.acknowledged});
-
-  if ((req.body.userID !== null)&&(x === true)) {
-    basketDB.updateOne({ userID: req.body.userID }, { $set: { basket: [] } }, { upsert: true }).then(myRess => {
-      console.log(myRess);
-      if (myRess.modifiedCount === 1) {
-        res.send({"result" : x, "orderID": orderID});
-      }
-    });
-  } else {
-      res.send({"result" : x, "orderID": orderID});
-  }
-});
-
-app.post("/get-orders", urlencodedParser, async (req, res) => {
-  const orderQuery = {
-    userID: req.body.userID
-  };
-  orderDB.find(orderQuery).toArray(function (orderErr, orderRes) {
-    if (orderErr) throw orderErr;
-    if (orderRes.length > 0) {
-      res.send({ "result": orderRes });
-    } else {
-      res.send({ "result": "Not found" });
-    }
-  });
-});
-
-app.post("/order-detail", urlencodedParser, async (req, res) => {
-  const orderQuery = {
-    orderID: req.body.orderID
-  };
-  orderDB.findOne(orderQuery, function (orderErr, orderRes) {
-    if (orderErr) throw orderErr;
-    res.send({ "order": orderRes });
   });
 });
 
