@@ -458,7 +458,8 @@ app.post("/place-order", urlencodedParser, async (req, res) => {
       }
     });
   } else {
-      res.send({"result" : x, "orderID": orderID});
+    sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { basket: [] } }, { upsert: true });
+    res.send({ "result": x, "orderID": orderID });
   }
 });
 
