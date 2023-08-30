@@ -251,12 +251,14 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
     basketDB.findOne({ userID: req.body.userID }, (basketListErr, basketListRes) => {
       if (basketListErr) throw basketListErr;
       const items = [];
+      let count = 0;
       basketListRes.basket.map((item) => {
         items.push(item.productID);
+        count += item.productQuantity;
       });
       bookDB.find({ ISBN: { "$in": items } }).toArray((basketItemsErr, basketItemsRes) => {
         if (basketItemsErr) throw basketItemsRes;
-        res.send({ basketListResult: basketListRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes });
+        res.send({ basketListResult: basketListRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes, quantity: count });
       });
     });
   }
@@ -521,8 +523,7 @@ app.get("/", urlencodedParser, async (req, res) => {
               // "result": "Hi good old " + sessionRes.session,
               "result": "Old Guest",
               "isLoggedIn": false,
-              "userID" : null,
-              "basketListResult": sessionRes.basket
+              "userID" : null
             });
           }
         } else {
@@ -533,8 +534,7 @@ app.get("/", urlencodedParser, async (req, res) => {
     res.send({
       "result": "New Guest",
       "isLoggedIn": false,
-      "userID" : null,
-      "basketListResult": []
+      "userID" : null
      });
   }
 });
