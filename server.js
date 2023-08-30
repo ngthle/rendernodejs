@@ -235,15 +235,17 @@ app.post("/basket-list", urlencodedParser, async (req, res) => {
       if (sessionErr) throw sessionErr;
       if (!sessionRes.basket) {
         sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { basket: [] } }, { upsert: true });
-        res.send({ basketListResult: [], basketItemsResult: [] });
+        res.send({ basketListResult: [], basketItemsResult: [], quantity: 0 });
       } else {
         const items = [];
+        let count = 0;
         sessionRes.basket.map((item) => {
           items.push(item.productID);
+          count += item.productQuantity;
         });
         bookDB.find({ ISBN: { "$in": items } }).toArray((basketItemsErr, basketItemsRes) => {
           if (basketItemsErr) throw basketItemsErr;
-          res.send({ basketListResult: sessionRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes });
+          res.send({ basketListResult: sessionRes.basket.sort(sortByTime), basketItemsResult: basketItemsRes, quantity: count });
         });
       }
     });
