@@ -10,6 +10,9 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
+const checkDomain = require('./middleware');
+app.use(checkDomain);
+
 app.use(function (req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
   res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
