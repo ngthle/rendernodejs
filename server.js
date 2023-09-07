@@ -28,7 +28,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(cors({
-  origin: 'https://waterstones.vercel.app',
+  origin: ['https://waterstones.vercel.app', 'https://waterstones-git-main-ngthle.vercel.app'],
   methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
   credentials: true
 }));
