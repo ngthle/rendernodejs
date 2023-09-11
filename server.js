@@ -623,6 +623,12 @@ app.post("/login", urlencodedParser, async (req, res) => {
 
 app.post("/login-after", urlencodedParser, async (req, res) => {
 
+  res.setHeader("Access-Control-Expose-Headers", "ETag");
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+
   const oAuth2Client = new OAuth2Client(
     keys.web.client_id,
     keys.web.client_secret,
