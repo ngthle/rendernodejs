@@ -11,25 +11,28 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
-const checkDomain = require('./middleware');
+const checkDomain = require('./middleware/checkDomain');
+const corsHeader = require('./middleware/corsHeader');
+
 app.use(checkDomain);
+app.use(corsHeader);
 
 const {OAuth2Client} = require('google-auth-library');
 const keys = require('./oauth2.json');
 
-app.use(function (req, res, next) {
-  res.header('Access-Control-Expose-Headers', 'ETag');
-  res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  next();
-  app.options('/', (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-    res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.send();
-  });
-});
+// app.use(function (req, res, next) {
+//   res.header('Access-Control-Expose-Headers', 'ETag');
+//   res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+//   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+//   next();
+//   app.options('/', (req, res) => {
+//     res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
+//     res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
+//     res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+//     res.send();
+//   });
+// });
 
 app.use(cors({
   origin: ['https://waterstones.vercel.app', 'https://waterstones-git-main-ngthle.vercel.app'],
@@ -501,11 +504,6 @@ app.post("/order-detail", urlencodedParser, async (req, res) => {
 //--------------------------------------------------
 
 app.get("/", urlencodedParser, async (req, res) => {
-  res.setHeader("Access-Control-Expose-Headers", "ETag");
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   if (req.signedCookies.server_ssID) {
     console.log('Signed Cookies server_ssID: ', req.signedCookies.server_ssID);
       const sessionQuery = { _id: req.signedCookies.server_ssID };
@@ -563,11 +561,6 @@ app.get("/login-google", urlencodedParser, async (req, res) => {
 });
 
 app.post("/login", urlencodedParser, async (req, res) => {
-  res.setHeader("Access-Control-Expose-Headers", "ETag");
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   const userQuery = { email: req.body.email };
   const sessionQuery = { _id: req.signedCookies.server_ssID };
@@ -622,12 +615,6 @@ app.post("/login", urlencodedParser, async (req, res) => {
 });
 
 app.post("/login-after", urlencodedParser, async (req, res) => {
-
-  res.setHeader("Access-Control-Expose-Headers", "ETag");
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
 
   const oAuth2Client = new OAuth2Client(
     keys.web.client_id,
@@ -762,12 +749,6 @@ app.post("/login-after", urlencodedParser, async (req, res) => {
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
-  res.setHeader("Access-Control-Expose-Headers", "ETag");
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  
   sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $unset: {userID: ""} }, { upsert: true });
   console.log(req.body.userID + ' has signed out');
   res.send({ "result": "Signed Out"});
