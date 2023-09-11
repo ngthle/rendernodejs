@@ -671,7 +671,41 @@ app.post("/login-after", urlencodedParser, async (req, res) => {
   userDB.findOne(userQuery, function(userErr, userRes) {
     if (userErr) throw userErr;
     if (userRes !== null) {
-      res.send({result: "An account with email " + email + " already exist."});
+      // res.send({result: "An account with email " + email + " already exist."});
+      sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
+        if (sessionErr) throw sessionErr;
+        const responeObject = {};
+        if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
+          responeObject["sessionBasketEdit"] = false;
+          sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userRes.userID } }, { upsert: true }).then(loginRes => {
+            if (loginRes.modifiedCount === 1) {
+              responeObject["result"] = true;
+              responeObject["message"] = "Login successful.";
+              res.send(responeObject);
+            }
+          });
+        } else {
+          responeObject["sessionBasketEdit"] = true;
+          let modifiedCount = 0;
+          let l = sessionRes.basket.length;
+          sessionRes.basket.map((item, idx, arr) => {
+            const d = new Date();
+            const time = d.getTime();
+            basketDB.updateOne({userID: userRes.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+            modifiedCount ++;
+            if (modifiedCount === l) {
+              sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
+            }
+          });
+          sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: userRes.userID } }, { upsert: true }).then(loginRes => {
+            if (loginRes.modifiedCount === 1) {``
+              responeObject["result"] = true;
+              responeObject["message"] = "Login successful.";
+              res.send(responeObject);
+            }
+          });
+        }
+      });
     } else {
       const createdTime = (new Date()).getTime();
       // const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
@@ -704,7 +738,7 @@ app.post("/login-after", urlencodedParser, async (req, res) => {
             sessionRes.basket.map((item, idx, arr) => {
               const d = new Date();
               const time = d.getTime();
-              basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+              basketDB.updateOne({userID: googleID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
               modifiedCount ++;
               if (modifiedCount === l) {
                 sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
