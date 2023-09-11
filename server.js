@@ -5,7 +5,8 @@ var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 let userIDServer;
-
+const jwt_decode = require('jwt-decode');
+const axios = require('axios');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
