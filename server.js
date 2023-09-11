@@ -13,6 +13,9 @@ const MongoStore = require('connect-mongo');
 const checkDomain = require('./middleware');
 app.use(checkDomain);
 
+const {OAuth2Client} = require('google-auth-library');
+const keys = require('./oauth2.json');
+
 app.use(function (req, res, next) {
   res.header('Access-Control-Expose-Headers', 'ETag');
   res.header('Access-Control-Allow-Origin', 'https://waterstones.vercel.app');
@@ -544,6 +547,20 @@ app.get("/", urlencodedParser, async (req, res) => {
   }
 });
 
+app.get("/login-google", urlencodedParser, async (req, res) => {
+  const oAuth2Client = new OAuth2Client(
+    keys.web.client_id,
+    keys.web.client_secret,
+    keys.web.redirect_uris[0]
+  );
+  // Generate the url that will be used for the consent dialog.
+  const authorizeUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    'scope': "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+  });
+  res.send({ "url": authorizeUrl });
+});
+
 app.post("/login", urlencodedParser, async (req, res) => {
   res.setHeader("Access-Control-Expose-Headers", "ETag");
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -601,6 +618,106 @@ app.post("/login", urlencodedParser, async (req, res) => {
       res.send({"result": false, "message": "We couldn't find an account with that email address."});
     }
   });
+});
+
+app.post("/login-after", urlencodedParser, async (req, res) => {
+
+  const oAuth2Client = new OAuth2Client(
+    keys.web.client_id,
+    keys.web.client_secret,
+    keys.web.redirect_uris[0]
+  );
+
+  const credential = req.body.credential;
+
+  var decoded = jwt_decode(credential);
+
+  async function verify() {
+    const ticket = await oAuth2Client.verifyIdToken({
+        idToken: credential,
+        audience: keys.web.client_id,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload();
+    // If request specified a G Suite domain:
+    // const domain = payload['hd'];
+    return payload;
+  }
+  // verify().catch(console.error);
+  const payload = await verify();
+
+  const email = payload['email'];
+  const firstName = payload['given_name'];
+  const lastName = payload['family_name'];
+  const googleID = payload['sub'];
+
+  // Generate the url that will be used for the consent dialog.
+
+  // const tokens = await oAuth2Client.getToken(credential);
+  // oAuth2Client.setCredentials(tokens);
+
+  // console.log(decoded);
+  const userQuery = { email: email };
+  const sessionQuery = { _id: req.signedCookies.server_ssID };
+
+  userDB.findOne(userQuery, function(userErr, userRes) {
+    if (userErr) throw userErr;
+    if (userRes !== null) {
+      res.send({result: "An account with email " + email + " already exist."});
+    } else {
+      const createdTime = (new Date()).getTime();
+      // const userID =  createdTime.toString() + (Math.floor(Math.random() * (9999 - 1000)) + 1000).toString();
+      const userQuery = {
+        createdTime: createdTime,
+        userID: googleID,
+        email: email,
+        firstName: firstName,
+        lastName: lastName
+      };
+      userDB.insertOne(userQuery, function (err, ress) {
+        if (err) throw err;
+        // res.send({ "result": ress.acknowledged });
+        sessionDB.findOne(sessionQuery, function (sessionErr, sessionRes) {
+          if (sessionErr) throw sessionErr;
+          const responeObject = {};
+          if ((!sessionRes.basket)||(sessionRes.basket.length === 0)) {
+            responeObject["sessionBasketEdit"] = false;
+            sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: googleID } }, { upsert: true }).then(loginRes => {
+              if (loginRes.modifiedCount === 1) {
+                responeObject["result"] = true;
+                responeObject["message"] = "Login successful.";
+                res.send(responeObject);
+              }
+            });
+          } else {
+            responeObject["sessionBasketEdit"] = true;
+            let modifiedCount = 0;
+            let l = sessionRes.basket.length;
+            sessionRes.basket.map((item, idx, arr) => {
+              const d = new Date();
+              const time = d.getTime();
+              basketDB.updateOne({userID: ress.userID}, { $push: {basket: {$each: [{"productID": item.productID, "productQuantity": item.productQuantity, "time": time}]}}}, {upsert: true});
+              modifiedCount ++;
+              if (modifiedCount === l) {
+                sessionDB.updateOne(sessionQuery, { $set: { basket: [] } }, { upsert: true });
+              }
+            });
+            sessionDB.updateOne({ _id: req.signedCookies.server_ssID }, { $set: { userID: googleID } }, { upsert: true }).then(loginRes => {
+              if (loginRes.modifiedCount === 1) {``
+                responeObject["result"] = true;
+                responeObject["message"] = "Login successful.";
+                res.send(responeObject);
+              }
+            });
+          }
+        });        
+      });
+      // res.send({result: "Account has been created with your email"});
+    }
+  });
+  
+  // res.send({ accessToken: "HEHEHE" });
 });
 
 app.post("/signout", urlencodedParser, async (req, res) => {
